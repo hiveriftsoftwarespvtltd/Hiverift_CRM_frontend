@@ -125,14 +125,61 @@ export default function QuotationsPage() {
     }
   };
 
+  const handleSendEmail = async (id, quotationNo, recipientEmail) => {
+    const res = await Swal.fire({
+      title: 'Email Official Quotation?',
+      html: `
+        <div style="text-align: left; font-size: 14px; color: #334155;">
+          <p><strong>Quotation:</strong> ${quotationNo || 'Proposal'}</p>
+          <p><strong>Recipient:</strong> <span style="color:#016139; font-weight:700;">${recipientEmail || 'Lead / Client Email'}</span></p>
+          <p style="font-size: 12px; color: #64748b; margin-top: 8px;">An official branded proposal with itemized services, pricing breakdown, and terms will be dispatched to their inbox.</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#016139',
+      confirmButtonText: '📧 Yes, Send Email Now',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (res.isConfirmed) {
+      Swal.fire({
+        title: 'Dispatching Email...',
+        text: 'Connecting to mail server and sending proposal...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      try {
+        const response = await quotationsAPI.sendEmail(id);
+        Swal.fire({
+          icon: 'success',
+          title: 'Quotation Emailed! 📧🎉',
+          text: response.data?.message || `Proposal successfully dispatched to ${recipientEmail}`,
+          confirmButtonColor: '#016139',
+        });
+        fetchQuotations();
+        if (previewQuotation && previewQuotation._id === id) {
+          setPreviewQuotation(prev => ({ ...prev, status: 'sent' }));
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Email Dispatch Failed',
+          text: err.response?.data?.message || 'Could not send quotation email. Please verify lead/client email address.',
+          confirmButtonColor: '#EF4444',
+        });
+      }
+    }
+  };
+
   const handleStatusUpdate = async (id, status) => {
     try {
       await quotationsAPI.updateStatus(id, status);
       Swal.fire({
         icon: 'success',
-        title: status === 'sent' ? 'Quotation Sent via Email 📧' : `Status set to ${status.toUpperCase()}`,
-        text: status === 'sent' ? 'Official proposal email dispatched to client' : '',
-        timer: 1500,
+        title: `Status set to ${status.toUpperCase()}`,
+        timer: 1200,
         showConfirmButton: false
       });
       fetchQuotations();
@@ -283,7 +330,15 @@ export default function QuotationsPage() {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: '#016139', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                        onClick={() => handleSendEmail(q._id, q.quotationNo, q.client?.email || q.lead?.email)}
+                        title="Send Official Quotation Proposal via Email"
+                      >
+                        <Send size={12} /> Email
+                      </button>
                       <button
                         className="btn btn-secondary btn-sm"
                         style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
@@ -348,16 +403,14 @@ export default function QuotationsPage() {
                 >
                   <Printer size={14} /> Print / PDF
                 </button>
-                {previewQuotation.status === 'draft' && (
-                  <button
-                    type="button"
-                    className="btn btn-sm"
-                    style={{ background: '#10B981', color: '#ffffff', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
-                    onClick={() => handleStatusUpdate(previewQuotation._id, 'sent')}
-                  >
-                    <Send size={14} /> Send to Client
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  style={{ background: '#10B981', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => handleSendEmail(previewQuotation._id, previewQuotation.quotationNo, previewQuotation.client?.email || previewQuotation.lead?.email)}
+                >
+                  <Send size={14} /> {previewQuotation.status === 'sent' ? 'Re-send Proposal 📧' : 'Send to Client 📧'}
+                </button>
                 <button
                   type="button"
                   style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: 20, padding: '0 4px', lineHeight: 1 }}
