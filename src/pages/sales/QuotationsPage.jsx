@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { quotationsAPI, leadsAPI, clientsAPI } from '../../api';
-import { Plus, Search, FileText, Download, Send, CheckCircle2, Eye, Trash2, Printer, X, Building, Mail, Phone, Calendar, ShieldCheck, UserCheck } from 'lucide-react';
+import { Plus, Search, FileText, Send, Eye, Edit3, Trash2, Building } from 'lucide-react';
 import Swal from 'sweetalert2';
+import ProposalCanvasModal from './ProposalCanvasModal';
 
 const QUOTATION_STATUSES = ['all', 'draft', 'sent', 'viewed', 'negotiation', 'accepted', 'rejected', 'expired'];
 
 export default function QuotationsPage() {
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const leadIdParam = searchParams.get('lead');
   const clientIdParam = searchParams.get('client');
@@ -15,23 +18,13 @@ export default function QuotationsPage() {
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(!!(leadIdParam || clientIdParam));
-  const [previewQuotation, setPreviewQuotation] = useState(null);
   const [leads, setLeads] = useState([]);
   const [clients, setClients] = useState([]);
 
-  const [targetType, setTargetType] = useState(clientIdParam ? 'client' : 'lead'); // 'lead' | 'client'
-
-  // Form State
-  const [formData, setFormData] = useState({
-    lead: leadIdParam || '',
-    client: clientIdParam || '',
-    validUntil: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
-    discount: 0,
-    taxPercent: 18,
-    notes: '',
-    services: [{ name: 'E-commerce Website Development', description: 'React + Node.js Custom Solution', quantity: 1, rate: 40000, amount: 40000 }]
-  });
+  // Proposal Canvas Modal State
+  const [canvasModalOpen, setCanvasModalOpen] = useState(!!(leadIdParam || clientIdParam));
+  const [activeQuotation, setActiveQuotation] = useState(null);
+  const [isModalEditing, setIsModalEditing] = useState(!!(leadIdParam || clientIdParam));
 
   useEffect(() => {
     fetchQuotations();
@@ -39,14 +32,10 @@ export default function QuotationsPage() {
   }, [statusTab]);
 
   useEffect(() => {
-    if (leadIdParam) {
-      setTargetType('lead');
-      setFormData(p => ({ ...p, lead: leadIdParam, client: '' }));
-      setShowModal(true);
-    } else if (clientIdParam) {
-      setTargetType('client');
-      setFormData(p => ({ ...p, client: clientIdParam, lead: '' }));
-      setShowModal(true);
+    if (leadIdParam || clientIdParam) {
+      setActiveQuotation(null);
+      setIsModalEditing(true);
+      setCanvasModalOpen(true);
     }
   }, [leadIdParam, clientIdParam]);
 
@@ -75,102 +64,32 @@ export default function QuotationsPage() {
     } catch {}
   };
 
-  const handleServiceChange = (index, field, value) => {
-    const updated = [...formData.services];
-    updated[index][field] = value;
-    if (field === 'quantity' || field === 'rate') {
-      updated[index].amount = (Number(updated[index].quantity) || 0) * (Number(updated[index].rate) || 0);
+  const getQuotationTemplateType = (q) => {
+    if (q?.templateType === 'social_media') return 'social_media';
+    if (q?.templateType === 'sales_standard') return 'sales_standard';
+    const text = (q?.services || []).map(s => (s.name || '') + ' ' + (s.description || '')).join(' ').toLowerCase();
+    if (text.includes('social') || text.includes('meta') || text.includes('reel') || text.includes('instagram') || text.includes('post') || text.includes('facebook')) {
+      return 'social_media';
     }
-    setFormData({ ...formData, services: updated });
+    return 'sales_standard';
   };
 
-  const addServiceRow = () => {
-    setFormData({
-      ...formData,
-      services: [...formData.services, { name: '', description: '', quantity: 1, rate: 0, amount: 0 }]
-    });
+  const handleOpenNew = () => {
+    setActiveQuotation(null);
+    setIsModalEditing(true);
+    setCanvasModalOpen(true);
   };
 
-  const removeServiceRow = (index) => {
-    if (formData.services.length === 1) return;
-    setFormData({ ...formData, services: formData.services.filter((_, i) => i !== index) });
+  const handleOpenEdit = (q) => {
+    setActiveQuotation(q);
+    setIsModalEditing(true);
+    setCanvasModalOpen(true);
   };
 
-  const handleCreateQuotation = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = { ...formData };
-      if (targetType === 'lead') {
-        delete payload.client;
-        if (!payload.lead) {
-          return Swal.fire({ icon: 'warning', title: 'Please select a Lead' });
-        }
-      } else {
-        delete payload.lead;
-        if (!payload.client) {
-          return Swal.fire({ icon: 'warning', title: 'Please select a Client' });
-        }
-      }
-
-      Object.keys(payload).forEach(k => {
-        if (payload[k] === '' || payload[k] === null || payload[k] === undefined) delete payload[k];
-      });
-
-      await quotationsAPI.create(payload);
-      Swal.fire({ icon: 'success', title: 'Quotation Created!', text: 'Quotation generated successfully', timer: 1500, showConfirmButton: false });
-      setShowModal(false);
-      fetchQuotations();
-    } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to create quotation' });
-    }
-  };
-
-  const handleSendEmail = async (id, quotationNo, recipientEmail) => {
-    const res = await Swal.fire({
-      title: 'Email Official Quotation?',
-      html: `
-        <div style="text-align: left; font-size: 14px; color: #334155;">
-          <p><strong>Quotation:</strong> ${quotationNo || 'Proposal'}</p>
-          <p><strong>Recipient:</strong> <span style="color:#016139; font-weight:700;">${recipientEmail || 'Lead / Client Email'}</span></p>
-          <p style="font-size: 12px; color: #64748b; margin-top: 8px;">An official branded proposal with itemized services, pricing breakdown, and terms will be dispatched to their inbox.</p>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#016139',
-      confirmButtonText: '📧 Yes, Send Email Now',
-      cancelButtonText: 'Cancel',
-    });
-
-    if (res.isConfirmed) {
-      Swal.fire({
-        title: 'Dispatching Email...',
-        text: 'Connecting to mail server and sending proposal...',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading(),
-      });
-
-      try {
-        const response = await quotationsAPI.sendEmail(id);
-        Swal.fire({
-          icon: 'success',
-          title: 'Quotation Emailed! 📧🎉',
-          text: response.data?.message || `Proposal successfully dispatched to ${recipientEmail}`,
-          confirmButtonColor: '#016139',
-        });
-        fetchQuotations();
-        if (previewQuotation && previewQuotation._id === id) {
-          setPreviewQuotation(prev => ({ ...prev, status: 'sent' }));
-        }
-      } catch (err) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Email Dispatch Failed',
-          text: err.response?.data?.message || 'Could not send quotation email. Please verify lead/client email address.',
-          confirmButtonColor: '#EF4444',
-        });
-      }
-    }
+  const handleOpenPreview = (q) => {
+    setActiveQuotation(q);
+    setIsModalEditing(false);
+    setCanvasModalOpen(true);
   };
 
   const handleStatusUpdate = async (id, status) => {
@@ -180,11 +99,12 @@ export default function QuotationsPage() {
         icon: 'success',
         title: `Status set to ${status.toUpperCase()}`,
         timer: 1200,
-        showConfirmButton: false
+        showConfirmButton: false,
+        iconColor: '#016139',
       });
       fetchQuotations();
-      if (previewQuotation && previewQuotation._id === id) {
-        setPreviewQuotation(prev => ({ ...prev, status }));
+      if (activeQuotation && activeQuotation._id === id) {
+        setActiveQuotation(prev => ({ ...prev, status }));
       }
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Failed', text: 'Status update failed' });
@@ -199,21 +119,71 @@ export default function QuotationsPage() {
       showCancelButton: true,
       confirmButtonColor: '#EF4444',
       confirmButtonText: 'Yes, Delete',
+      iconColor: '#EF4444',
     });
     if (res.isConfirmed) {
       try {
         await quotationsAPI.delete(id);
-        Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false, iconColor: '#016139' });
         fetchQuotations();
+        if (activeQuotation && activeQuotation._id === id) {
+          setCanvasModalOpen(false);
+          setActiveQuotation(null);
+        }
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not delete quotation' });
       }
     }
   };
 
-  const calculateSubtotal = () => formData.services.reduce((s, row) => s + (row.amount || 0), 0);
-  const calculateTax = () => ((calculateSubtotal() - (Number(formData.discount) || 0)) * (Number(formData.taxPercent) || 0)) / 100;
-  const calculateTotal = () => calculateSubtotal() - (Number(formData.discount) || 0) + calculateTax();
+  const handleSendEmail = async (id, quotationNo, recipientEmail) => {
+    const res = await Swal.fire({
+      title: 'Email Official Quotation?',
+      html: `
+        <div style="text-align: left; font-size: 14px; color: #334155;">
+          <p><strong>Quotation:</strong> ${quotationNo || 'Proposal'}</p>
+          <p><strong>Recipient:</strong> <span style="color:#016139; font-weight:700;">${recipientEmail || 'Lead / Client Email'}</span></p>
+          <p style="font-size: 12px; color: #64748b; margin-top: 8px;">An official proposal with itemized services, pricing breakdown, bank details and terms will be dispatched to their inbox.</p>
+        </div>
+      `,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#016139',
+      confirmButtonText: 'Yes, Send Email Now',
+      cancelButtonText: 'Cancel',
+      allowOutsideClick: false,
+    });
+
+    if (res.isConfirmed) {
+      Swal.fire({
+        title: 'Dispatching Email...',
+        text: 'Connecting to mail server and sending proposal...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      try {
+        const response = await quotationsAPI.sendEmail(id);
+        Swal.fire({
+          icon: 'success',
+          title: 'Quotation Emailed!',
+          text: response.data?.message || `Proposal successfully dispatched to ${recipientEmail}`,
+          confirmButtonColor: '#016139',
+          timer: 2000,
+          showConfirmButton: true,
+        });
+        fetchQuotations();
+        setCanvasModalOpen(false);
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Email Dispatch Failed',
+          text: err.response?.data?.message || 'Could not send quotation email. Please verify lead/client email address.',
+          confirmButtonColor: '#EF4444',
+        });
+      }
+    }
+  };
 
   const filteredQuotations = quotations.filter(q => {
     if (!search) return true;
@@ -223,19 +193,26 @@ export default function QuotationsPage() {
       q.lead?.name?.toLowerCase().includes(s) ||
       q.client?.name?.toLowerCase().includes(s) ||
       q.lead?.company?.toLowerCase().includes(s) ||
-      q.client?.company?.toLowerCase().includes(s)
+      q.client?.company?.toLowerCase().includes(s) ||
+      q.createdBy?.name?.toLowerCase().includes(s)
     );
   });
+
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'management';
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Sales Quotations</h1>
-          <p className="page-subtitle">Create, manage, preview, and track professional client proposals</p>
+          <h1 className="page-title">Sales Quotations & Proposals</h1>
+          <p className="page-subtitle">
+            {isAdminOrManager
+              ? 'Generate, review, and track quotations created across all sales teams'
+              : 'Generate, edit, email, and track your commercial client proposals'}
+          </p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> Generate Quotation
+        <button className="btn btn-primary" onClick={handleOpenNew}>
+          <Plus size={16} /> Generate New Quotation
         </button>
       </div>
 
@@ -257,10 +234,10 @@ export default function QuotationsPage() {
       {/* Filters Bar */}
       <div className="filters-bar" style={{ borderRadius: '12px 12px 0 0', border: '1px solid var(--border)' }}>
         <div className="search-box">
-          <Search />
+          <Search size={15} />
           <input
             className="search-input"
-            placeholder="Search by quote #, client, lead..."
+            placeholder="Search by quote #, client, lead company, creator..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -273,9 +250,12 @@ export default function QuotationsPage() {
           <div style={{ padding: 40, textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto' }} /></div>
         ) : filteredQuotations.length === 0 ? (
           <div className="empty-state">
-            <FileText />
+            <FileText size={36} />
             <h3>No Quotations Found</h3>
-            <p>Generate formal price quotations and proposals for your leads or converted clients.</p>
+            <p>Generate formal commercial proposals for leads and client accounts.</p>
+            <button className="btn btn-primary btn-sm" onClick={handleOpenNew}>
+              <Plus size={14} /> Generate Quotation
+            </button>
           </div>
         ) : (
           <table className="table">
@@ -283,9 +263,10 @@ export default function QuotationsPage() {
               <tr>
                 <th>Quotation No</th>
                 <th>Client / Lead</th>
-                <th>Total Value</th>
+                {isAdminOrManager && <th>Created By</th>}
+                <th>Format Template</th>
+                <th>Total Proposal (₹)</th>
                 <th>Valid Until</th>
-                <th>Created By</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -293,9 +274,9 @@ export default function QuotationsPage() {
             <tbody>
               {filteredQuotations.map(q => (
                 <tr key={q._id}>
-                  <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <FileText size={16} /> {q.quotationNo}
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--primary)' }}>
+                      <FileText size={15} /> {q.quotationNo}
                     </div>
                   </td>
                   <td>
@@ -304,19 +285,62 @@ export default function QuotationsPage() {
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
                       {q.client ? (
-                        <span style={{ color: '#016139', fontWeight: 600 }}>🏢 {q.client.company || 'Client Profile'}</span>
+                        <span style={{ color: '#016139', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <Building size={11} /> {q.client.company || 'Client Profile'}
+                        </span>
                       ) : q.lead ? (
-                        <span>🎯 {q.lead.company || 'Lead Inquiry'}</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          <FileText size={11} /> {q.lead.company || 'Lead Inquiry'}
+                        </span>
                       ) : '-'}
                     </div>
                   </td>
-                  <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                  {isAdminOrManager && (
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
+                          {q.createdBy?.name || 'Admin'}
+                        </span>
+                        {q.createdBy?.role && (
+                          <span style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: q.createdBy.role === 'admin' ? '#E9F8F1' : '#F1F5F9',
+                            color: q.createdBy.role === 'admin' ? '#016139' : '#475569',
+                            textTransform: 'uppercase'
+                          }}>
+                            {q.createdBy.role}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                  <td>
+                    {(() => {
+                      const tplType = getQuotationTemplateType(q);
+                      return (
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '3px 8px',
+                          borderRadius: 6,
+                          background: tplType === 'social_media' ? '#EFF6FF' : '#F0FDF4',
+                          color: tplType === 'social_media' ? '#1D4ED8' : '#15803D',
+                          border: `1px solid ${tplType === 'social_media' ? '#BFDBFE' : '#BBF7D0'}`
+                        }}>
+                          {tplType === 'social_media' ? 'Social Media & Ads' : 'IT Software'}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  <td style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>
                     ₹{q.totalAmount?.toLocaleString() || 0}
                   </td>
                   <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
                     {new Date(q.validUntil).toLocaleDateString()}
                   </td>
-                  <td>{q.createdBy?.name || 'Sales Staff'}</td>
                   <td>
                     <select
                       className="form-select"
@@ -330,30 +354,45 @@ export default function QuotationsPage() {
                     </select>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                      {/* Email Action */}
                       <button
                         className="btn btn-sm"
                         style={{ background: '#016139', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
                         onClick={() => handleSendEmail(q._id, q.quotationNo, q.client?.email || q.lead?.email)}
-                        title="Send Official Quotation Proposal via Email"
+                        title="Send Proposal via Email"
                       >
                         <Send size={12} /> Email
                       </button>
+
+                      {/* Preview Action */}
                       <button
                         className="btn btn-secondary btn-sm"
                         style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
-                        onClick={() => setPreviewQuotation(q)}
-                        title="Preview & Print Proposal"
+                        onClick={() => handleOpenPreview(q)}
+                        title="View Full Proposal Document"
                       >
                         <Eye size={13} /> Preview
                       </button>
+
+                      {/* Edit Action */}
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                        onClick={() => handleOpenEdit(q)}
+                        title="Edit Quotation in Document Canvas"
+                      >
+                        <Edit3 size={13} style={{ color: 'var(--primary)' }} /> Edit
+                      </button>
+
+                      {/* Delete Action */}
                       <button
                         className="btn btn-ghost btn-sm"
                         style={{ color: 'var(--red)', padding: '4px 6px' }}
                         onClick={() => handleDelete(q._id, q.quotationNo)}
                         title="Delete Quotation"
                       >
-                        <Trash2 size={15} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -364,394 +403,25 @@ export default function QuotationsPage() {
         )}
       </div>
 
-      {/* Preview Modal */}
-      {previewQuotation && (
-        <div className="modal-overlay" style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div className="modal modal-xl" style={{
-            maxWidth: 880,
-            width: '100%',
-            maxHeight: '92vh',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: 0,
-            overflow: 'hidden',
-            borderRadius: 14,
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.3)'
-          }}>
-            {/* Modal Header Actions Bar */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '14px 24px',
-              background: '#014D3B',
-              color: '#ffffff',
-              flexShrink: 0,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FileText size={20} />
-                <h3 style={{ margin: 0, fontSize: 17, color: '#ffffff', fontWeight: 700 }}>
-                  Quotation Proposal: {previewQuotation.quotationNo}
-                </h3>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  style={{ background: '#ffffff', color: '#016139', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => window.print()}
-                >
-                  <Printer size={14} /> Print / PDF
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  style={{ background: '#10B981', color: '#ffffff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => handleSendEmail(previewQuotation._id, previewQuotation.quotationNo, previewQuotation.client?.email || previewQuotation.lead?.email)}
-                >
-                  <Send size={14} /> {previewQuotation.status === 'sent' ? 'Re-send Proposal 📧' : 'Send to Client 📧'}
-                </button>
-                <button
-                  type="button"
-                  style={{ background: 'transparent', border: 'none', color: '#ffffff', cursor: 'pointer', fontSize: 20, padding: '0 4px', lineHeight: 1 }}
-                  onClick={() => setPreviewQuotation(null)}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Proposal Document Body with Smooth Scroll */}
-            <div style={{
-              padding: '28px 36px',
-              background: '#ffffff',
-              flex: 1,
-              overflowY: 'auto',
-            }}>
-              {/* Proposal Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #016139', paddingBottom: 18, marginBottom: 22 }}>
-                <div>
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#016139', margin: 0 }}>HiveRift Technologies</h2>
-                  <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Enterprise Software & IT Solutions</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#94a3b8' }}>support@hiverift.com | +91 (800) 600-0000</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: '#1e293b' }}>PROPOSAL / QUOTATION</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#016139', marginTop: 2 }}>{previewQuotation.quotationNo}</div>
-                  <div style={{ marginTop: 6 }}>
-                    <span className={`badge badge-${previewQuotation.status}`}>
-                      {previewQuotation.status.toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bill To & Details Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24, background: '#f8fafc', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#64748b', marginBottom: 4 }}>
-                    PROPOSAL PREPARED FOR:
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#0f172a' }}>
-                    {previewQuotation.client?.name || previewQuotation.lead?.name || 'Valued Client'}
-                  </div>
-                  {(previewQuotation.client?.company || previewQuotation.lead?.company) && (
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                      🏢 {previewQuotation.client?.company || previewQuotation.lead?.company}
-                    </div>
-                  )}
-                  {(previewQuotation.client?.email || previewQuotation.lead?.email) && (
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                      ✉️ {previewQuotation.client?.email || previewQuotation.lead?.email}
-                    </div>
-                  )}
-                  {(previewQuotation.client?.phone || previewQuotation.lead?.phone) && (
-                    <div style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                      📞 {previewQuotation.client?.phone || previewQuotation.lead?.phone}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
-                    <strong>Date Created:</strong> {new Date(previewQuotation.createdAt).toLocaleDateString()}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
-                    <strong>Valid Until:</strong> <span style={{ color: '#016139', fontWeight: 700 }}>{new Date(previewQuotation.validUntil).toLocaleDateString()}</span>
-                  </div>
-                  <div style={{ fontSize: 13, color: '#64748b' }}>
-                    <strong>Prepared By:</strong> {previewQuotation.createdBy?.name || 'Sales Department'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Service Line Items Table */}
-              <div style={{ marginBottom: 24 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#475569' }}>
-                      <th style={{ padding: '10px 12px', borderRadius: '6px 0 0 0' }}>#</th>
-                      <th style={{ padding: '10px 12px' }}>Service / Scope</th>
-                      <th style={{ padding: '10px 12px' }}>Description</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center' }}>Qty</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>Unit Rate</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right', borderRadius: '0 6px 0 0' }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {previewQuotation.services?.map((s, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '10px 12px', color: '#94a3b8' }}>{idx + 1}</td>
-                        <td style={{ padding: '10px 12px', fontWeight: 600, color: '#0f172a' }}>{s.name}</td>
-                        <td style={{ padding: '10px 12px', color: '#64748b' }}>{s.description || '-'}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 600 }}>{s.quantity}</td>
-                        <td style={{ padding: '12px 14px', textAlign: 'right' }}>₹{s.rate?.toLocaleString()}</td>
-                        <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#016139' }}>
-                          ₹{s.amount?.toLocaleString()}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Financial Calculation Breakdown */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
-                <div style={{ width: 320, background: '#f8fafc', padding: 16, borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748b', marginBottom: 6 }}>
-                    <span>Subtotal:</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>₹{previewQuotation.subtotal?.toLocaleString()}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748b', marginBottom: 6 }}>
-                    <span>Discount:</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>-₹{previewQuotation.discount?.toLocaleString() || '0'}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748b', marginBottom: 10 }}>
-                    <span>GST Tax ({previewQuotation.taxPercent}%):</span>
-                    <span style={{ fontWeight: 600, color: '#1e293b' }}>+₹{previewQuotation.taxAmount?.toLocaleString() || '0'}</span>
-                  </div>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontSize: 17,
-                    fontWeight: 800,
-                    color: '#016139',
-                    borderTop: '2px solid #cbd5e1',
-                    paddingTop: 10
-                  }}>
-                    <span>Grand Total:</span>
-                    <span>₹{previewQuotation.totalAmount?.toLocaleString()}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Terms & Footer */}
-              <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16, fontSize: 12, color: '#64748b' }}>
-                <div style={{ fontWeight: 700, color: '#334155', marginBottom: 4 }}>Terms & Conditions:</div>
-                <ol style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-                  <li>This proposal is valid until {new Date(previewQuotation.validUntil).toLocaleDateString()}.</li>
-                  <li>Standard 50% advance required upon formal acceptance to commence milestone delivery.</li>
-                  <li>All deliverables are backed by HiveRift CRM warranty & SLA support.</li>
-                </ol>
-              </div>
-            </div>
-
-            {/* Fixed Modal Bottom Footer */}
-            <div className="modal-footer" style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '12px 24px', flexShrink: 0 }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setPreviewQuotation(null)}>
-                Close Preview
-              </button>
-              <button type="button" className="btn btn-primary" onClick={() => window.print()}>
-                <Printer size={15} /> Print / Save PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Modal */}
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal modal-xl">
-            <div className="modal-header">
-              <h3 className="modal-title">Generate New Quotation</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
-            </div>
-            <form onSubmit={handleCreateQuotation}>
-              <div className="modal-body">
-                {/* Target Type Selector: Client vs Lead */}
-                <div style={{ marginBottom: 16, background: '#f8fafc', padding: 12, borderRadius: 10, border: '1px solid #e2e8f0' }}>
-                  <label className="form-label" style={{ fontWeight: 700, marginBottom: 8 }}>Quotation Prepared For:</label>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                      <input
-                        type="radio"
-                        name="targetType"
-                        checked={targetType === 'client'}
-                        onChange={() => setTargetType('client')}
-                      />
-                      🏢 Converted Client ({clients.length} in Portfolio)
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
-                      <input
-                        type="radio"
-                        name="targetType"
-                        checked={targetType === 'lead'}
-                        onChange={() => setTargetType('lead')}
-                      />
-                      🎯 Sales Lead ({leads.length} Active Inquiries)
-                    </label>
-                  </div>
-                </div>
-
-                <div className="grid-2">
-                  {targetType === 'client' ? (
-                    <div className="form-group">
-                      <label className="form-label required">Select Client</label>
-                      <select
-                        className="form-select"
-                        required
-                        value={formData.client}
-                        onChange={e => setFormData({ ...formData, client: e.target.value, lead: '' })}
-                      >
-                        <option value="">-- Choose Client --</option>
-                        {clients.map(c => (
-                          <option key={c._id} value={c._id}>
-                            {c.clientId} - {c.name} ({c.company || 'Individual'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  ) : (
-                    <div className="form-group">
-                      <label className="form-label required">Select Lead</label>
-                      <select
-                        className="form-select"
-                        required
-                        value={formData.lead}
-                        onChange={e => setFormData({ ...formData, lead: e.target.value, client: '' })}
-                      >
-                        <option value="">-- Choose Lead --</option>
-                        {leads.map(l => (
-                          <option key={l._id} value={l._id}>
-                            {l.leadId} - {l.name} ({l.company || 'Individual'})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="form-group">
-                    <label className="form-label required">Valid Until Date</label>
-                    <input
-                      type="date"
-                      className="form-input"
-                      required
-                      value={formData.validUntil}
-                      onChange={e => setFormData({ ...formData, validUntil: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Service Items Table */}
-                <div style={{ margin: '16px 0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <label className="form-label required" style={{ margin: 0 }}>Service Line Items</label>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={addServiceRow}>+ Add Item</button>
-                  </div>
-
-                  {formData.services.map((row, idx) => (
-                    <div key={idx} className="grid-4" style={{ gridTemplateColumns: '2fr 2fr 1fr 1.5fr 40px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                      <input
-                        className="form-input"
-                        placeholder="Service Name"
-                        required
-                        value={row.name}
-                        onChange={e => handleServiceChange(idx, 'name', e.target.value)}
-                      />
-                      <input
-                        className="form-input"
-                        placeholder="Description (Optional)"
-                        value={row.description}
-                        onChange={e => handleServiceChange(idx, 'description', e.target.value)}
-                      />
-                      <input
-                        type="number"
-                        className="form-input"
-                        placeholder="Qty"
-                        required
-                        min="1"
-                        value={row.quantity}
-                        onChange={e => handleServiceChange(idx, 'quantity', e.target.value)}
-                      />
-                      <input
-                        type="number"
-                        className="form-input"
-                        placeholder="Rate (₹)"
-                        required
-                        value={row.rate}
-                        onChange={e => handleServiceChange(idx, 'rate', e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        style={{ color: 'var(--red)' }}
-                        onClick={() => removeServiceRow(idx)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Calculation Summary Footer */}
-                <div className="grid-3" style={{ background: '#f8fafc', padding: 16, borderRadius: 8, border: '1px solid #e2e8f0', marginTop: 12 }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Discount Amount (₹)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.discount}
-                      onChange={e => setFormData({ ...formData, discount: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">GST Tax (%)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.taxPercent}
-                      onChange={e => setFormData({ ...formData, taxPercent: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: 12, color: '#64748b' }}>Estimated Grand Total</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: '#016139' }}>
-                      ₹{calculateTotal().toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: 16 }}>
-                  <label className="form-label">Additional Notes / Proposal Scope</label>
-                  <textarea
-                    className="form-textarea"
-                    rows="2"
-                    placeholder="E.g., 50% advance upon contract signing..."
-                    value={formData.notes}
-                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Generate Quotation</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* UNIFIED PROPOSAL CANVAS MODAL (WYSIWYG DOCUMENT EDIT & PREVIEW) */}
+      <ProposalCanvasModal
+        isOpen={canvasModalOpen}
+        onClose={() => {
+          setCanvasModalOpen(false);
+          setActiveQuotation(null);
+        }}
+        quotation={activeQuotation}
+        initialIsEditing={isModalEditing}
+        leads={leads}
+        clients={clients}
+        onSaved={(savedDoc) => {
+          fetchQuotations();
+          if (savedDoc) setActiveQuotation(savedDoc);
+        }}
+        onSendEmail={(id, quotationNo, recipientEmail) => {
+          handleSendEmail(id, quotationNo, recipientEmail);
+        }}
+      />
     </div>
   );
 }

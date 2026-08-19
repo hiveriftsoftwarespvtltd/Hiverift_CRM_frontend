@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { projectsAPI, tasksAPI, usersAPI } from '../../api';
-import { ArrowLeft, CheckSquare, Plus, Calendar, User, FolderKanban, Clock, Send, ShieldCheck, Tag, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckSquare, Plus, Calendar, User, FolderKanban, Clock, Send, ShieldCheck, Tag, RefreshCw, CheckCircle2, Paperclip, FileText, UploadCloud, Download, Trash2, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const PROJECT_STATUSES = ['assigned', 'started', 'in_progress', 'review', 'client_review', 'completed', 'on_hold', 'cancelled'];
@@ -53,7 +53,12 @@ export default function ProjectDetailPage() {
   const fetchUsers = async () => {
     try {
       const { data } = await usersAPI.getAll({ limit: 100 });
-      setUsers(data.data.users || []);
+      const allUsers = data.data.users || [];
+      const filteredTechUsers = allUsers.filter(u =>
+        ['development', 'digital_marketing'].includes(u.role) ||
+        ['development', 'digital_marketing'].includes(u.department)
+      );
+      setUsers(filteredTechUsers.length > 0 ? filteredTechUsers : allUsers);
     } catch {}
   };
 
@@ -76,7 +81,7 @@ export default function ProjectDetailPage() {
     try {
       await projectsAPI.updateProgress(id, pVal);
       setProject(prev => prev ? { ...prev, progress: pVal } : prev);
-      Swal.fire({ icon: 'success', title: `Progress updated to ${pVal}%! 🚀`, timer: 1000, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: `Progress updated to ${pVal}%!`, timer: 1000, showConfirmButton: false });
       fetchProjectAndTasks();
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not update progress' });
@@ -121,6 +126,67 @@ export default function ProjectDetailPage() {
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not add note' });
     }
+  };
+
+  const handleDirectFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    for (const file of files) {
+      if (file.size > 15 * 1024 * 1024) {
+        Swal.fire({ icon: 'warning', title: 'File too large', text: `${file.name} exceeds 15MB.` });
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          await projectsAPI.addAttachment(id, {
+            name: file.name,
+            url: ev.target.result,
+            fileType: file.type || 'application/pdf',
+            size: file.size,
+          });
+          Swal.fire({ icon: 'success', title: 'Document Uploaded!', timer: 1200, showConfirmButton: false });
+          fetchProjectAndTasks();
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'Upload failed', text: err.response?.data?.message || 'Failed to upload document' });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = async (index, attName) => {
+    const res = await Swal.fire({
+      title: 'Remove document?',
+      text: `Are you sure you want to remove "${attName}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#EF4444',
+      confirmButtonText: 'Yes, Remove'
+    });
+    if (res.isConfirmed) {
+      try {
+        await projectsAPI.removeAttachment(id, index);
+        Swal.fire({ icon: 'success', title: 'Removed', timer: 1000, showConfirmButton: false });
+        fetchProjectAndTasks();
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not remove attachment' });
+      }
+    }
+  };
+
+  const handleDownloadAttachment = (att) => {
+    const attUrl = typeof att === 'string' ? att : att.url;
+    const attName = typeof att === 'string' ? att : att.name || 'Project_Document';
+    if (!attUrl) return;
+    const link = document.createElement('a');
+    link.href = attUrl;
+    link.download = attName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center' }}><div className="loading-spinner" /></div>;
@@ -307,6 +373,116 @@ export default function ProjectDetailPage() {
             </p>
           </div>
 
+          {/* Project Attachments & Documents (PDF / DOC) */}
+          <div className="card">
+            <div className="card-header" style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Paperclip size={18} style={{ color: 'var(--primary)' }} />
+                <h3 className="card-title" style={{ margin: 0 }}>Project Documents & PDF Attachments</h3>
+              </div>
+              <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <UploadCloud size={14} />
+                Upload File
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.zip,.csv,.xlsx"
+                  onChange={handleDirectFileUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            </div>
+
+            {project.attachments && project.attachments.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 12 }}>
+                {project.attachments.map((att, idx) => {
+                  const attName = typeof att === 'string' ? att : att.name || `Document_${idx + 1}`;
+                  const attUrl = typeof att === 'string' ? att : att.url;
+                  const isPdf = attName.toLowerCase().endsWith('.pdf');
+                  const ext = attName.split('.').pop()?.toUpperCase() || 'FILE';
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '12px',
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: 10
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                        <div style={{
+                          padding: '6px 10px',
+                          borderRadius: 6,
+                          background: isPdf ? '#FEE2E2' : '#E0F2FE',
+                          color: isPdf ? '#DC2626' : '#0284C7',
+                          fontWeight: 800,
+                          fontSize: 12
+                        }}>
+                          {isPdf ? 'PDF' : ext}
+                        </div>
+                        <div style={{ flex: 1, overflow: 'hidden' }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={attName}>
+                            {attName}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                            {att.size ? `${(att.size / 1024).toFixed(1)} KB • ` : ''}
+                            {att.uploadedAt ? new Date(att.uploadedAt).toLocaleDateString() : 'Attached'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                        {attUrl && (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '3px 8px', fontSize: 11 }}
+                            onClick={() => handleDownloadAttachment(att)}
+                          >
+                            <Download size={13} /> View / Download
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          style={{ color: 'var(--red)', padding: '3px 6px' }}
+                          onClick={() => handleRemoveAttachment(idx, attName)}
+                          title="Remove file"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ padding: '20px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: 8, border: '1px dashed var(--border)' }}>
+                <FileText size={24} style={{ color: 'var(--text-muted)', marginBottom: 4 }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-heading)' }}>No attachments uploaded yet</div>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 10px' }}>
+                  Attach scope PDF, client documents, wireframes, or credentials here.
+                </p>
+                <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <UploadCloud size={14} />
+                  Upload First Document
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.zip,.csv,.xlsx"
+                    onChange={handleDirectFileUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
           {/* Project Notes */}
           <div className="card">
             <h3 className="card-title" style={{ marginBottom: 12 }}>Project Discussion & Notes</h3>
@@ -354,17 +530,6 @@ export default function ProjectDetailPage() {
                 <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Deadline</div>
                 <div style={{ fontWeight: 600, color: 'var(--red)' }}>{new Date(project.deadline).toLocaleDateString()}</div>
               </div>
-
-              {/* Commercial Contract Value — Strictly visible ONLY to Admin, Management, and Sales */}
-              {canSeeCommercialValue && (
-                <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Project Contract Value</div>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: '#016139' }}>
-                    ₹{project.value?.toLocaleString() || 0}
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Confidential commercial deal value</div>
-                </div>
-              )}
             </div>
           </div>
         </div>

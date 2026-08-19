@@ -15,6 +15,7 @@ export const usersAPI = {
   getOne: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
+  resetPassword: (id, password) => api.put(`/users/${id}/reset-password`, { password }),
   delete: (id) => api.delete(`/users/${id}`),
 };
 
@@ -62,6 +63,8 @@ export const projectsAPI = {
   updateStatus: (id, status) => api.put(`/projects/${id}/status`, { status }),
   updateProgress: (id, progress) => api.put(`/projects/${id}/progress`, { progress }),
   addNote: (id, text) => api.post(`/projects/${id}/notes`, { text }),
+  addAttachment: (id, data) => api.post(`/projects/${id}/attachments`, data),
+  removeAttachment: (id, index) => api.delete(`/projects/${id}/attachments/${index}`),
   getStats: () => api.get('/projects/stats'),
   delete: (id) => api.delete(`/projects/${id}`),
 };
@@ -90,9 +93,11 @@ export const paymentsAPI = {
 // Renewals
 export const renewalsAPI = {
   getAll: (params) => api.get('/renewals', { params }),
+  getOne: (id) => api.get(`/renewals/${id}`),
   create: (data) => api.post('/renewals', data),
   update: (id, data) => api.put(`/renewals/${id}`, data),
   renew: (id, data) => api.put(`/renewals/${id}/renew`, data),
+  delete: (id) => api.delete(`/renewals/${id}`),
   getDashboard: () => api.get('/renewals/dashboard'),
 };
 
@@ -102,6 +107,10 @@ export const attendanceAPI = {
   getMy: () => api.get('/attendance/my'),
   checkIn: (data) => api.post('/attendance/checkin', data),
   checkOut: () => api.put('/attendance/checkout'),
+  startBreak: (type) => api.post('/attendance/start-break', { type }),
+  endBreak: () => api.post('/attendance/end-break'),
+  resetToday: () => api.post('/attendance/reset-today'),
+  delete: (id) => api.delete(`/attendance/${id}`),
   getTodaySummary: () => api.get('/attendance/today-summary'),
   getMonthlyReport: (params) => api.get('/attendance/monthly-report', { params }),
 };
@@ -135,6 +144,8 @@ export const notificationsAPI = {
   markAsRead: (id) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
   markAllAsRead: () => api.put('/notifications/read-all'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  deleteAll: () => api.delete('/notifications'),
 };
 
 // Audit Logs
@@ -157,6 +168,17 @@ export const dashboardAPI = {
   sales: () => api.get('/dashboard/sales'),
   tech: () => api.get('/dashboard/tech'),
   hr: () => api.get('/dashboard/hr'),
+};
+
+// Invoices (Admin & Management Only)
+export const invoicesAPI = {
+  getAll: (params) => api.get('/invoices', { params }),
+  getStats: () => api.get('/invoices/stats'),
+  getOne: (id) => api.get(`/invoices/${id}`),
+  create: (data) => api.post('/invoices', data),
+  update: (id, data) => api.put(`/invoices/${id}`, data),
+  delete: (id) => api.delete(`/invoices/${id}`),
+  sendEmail: (id, data) => api.post(`/invoices/${id}/send-email`, data),
 };
 
 export default api;

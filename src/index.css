@@ -238,12 +238,20 @@ body {
   background: white;
   border-radius: 12px;
   border: 1px solid var(--border);
-  padding: 20px;
+  padding: 16px 14px;
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
   transition: all 0.2s ease;
   cursor: default;
+  overflow: hidden;
+}
+
+.kpi-card > div:last-child {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
 .kpi-card:hover {
@@ -252,7 +260,7 @@ body {
 }
 
 .kpi-icon {
-  width: 48px; height: 48px;
+  width: 40px; height: 40px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -260,26 +268,35 @@ body {
   flex-shrink: 0;
 }
 
-.kpi-icon svg { width: 22px; height: 22px; }
+.kpi-icon svg { width: 20px; height: 20px; }
 
 .kpi-value {
-  font-size: 26px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--text-heading);
-  line-height: 1;
-  margin-bottom: 4px;
+  line-height: 1.15;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-label {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--text-secondary);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-growth {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-growth.positive { color: #10B981; }
@@ -665,19 +682,47 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
+  padding: 50px 20px;
   text-align: center;
 }
 
-.empty-state svg {
-  width: 56px; height: 56px;
+.empty-state > svg {
+  width: 48px;
+  height: 48px;
   color: var(--text-muted);
-  margin-bottom: 16px;
-  opacity: 0.4;
+  margin-bottom: 14px;
+  opacity: 0.45;
 }
 
-.empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text-heading); margin: 0 0 6px; }
-.empty-state p { color: var(--text-secondary); font-size: 13.5px; margin: 0 0 20px; }
+.empty-state h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-heading);
+  margin: 0 0 6px;
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin: 0 0 18px;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.empty-state .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.empty-state .btn svg {
+  width: 14px;
+  height: 14px;
+  margin-bottom: 0;
+  opacity: 1;
+  color: inherit;
+}
 
 /* ===========================
    NOTIFICATION BELL
@@ -794,3 +839,8 @@ body {
 /* Hover lift */
 .hover-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+/* SweetAlert Global Top Stacking */
+.swal2-container {
+  z-index: 99999 !important;
+}

@@ -4,7 +4,8 @@ import { attendanceAPI, usersAPI } from '../../api';
 import {
   CalendarCheck, Clock, CheckCircle2, AlertTriangle, Users, Calendar,
   Download, Filter, ArrowUpDown, ChevronLeft, ChevronRight, UserCheck, ShieldAlert,
-  Search, Briefcase, Code, Megaphone, UserSquare2, X, ArrowLeft, BarChart3
+  Search, Briefcase, Code, Megaphone, UserSquare2, X, ArrowLeft, BarChart3,
+  Mail, Eye, Crown, CheckCircle, Coffee
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -14,12 +15,12 @@ const MONTH_NAMES = [
 ];
 
 const DEPARTMENTS = [
-  { id: 'all', label: 'All Staff', icon: '🏢' },
-  { id: 'development', label: 'Development', icon: '💻' },
-  { id: 'sales', label: 'Sales', icon: '💼' },
-  { id: 'digital_marketing', label: 'Marketing', icon: '📈' },
-  { id: 'management', label: 'Management', icon: '👔' },
-  { id: 'hr', label: 'HR', icon: '👥' },
+  { id: 'all', label: 'All Staff', Icon: Users },
+  { id: 'development', label: 'Development', Icon: Code },
+  { id: 'sales', label: 'Sales', Icon: Briefcase },
+  { id: 'digital_marketing', label: 'Marketing', Icon: Megaphone },
+  { id: 'management', label: 'Management', Icon: UserCheck },
+  { id: 'hr', label: 'HR', Icon: UserSquare2 },
 ];
 
 export default function AttendancePage() {
@@ -41,7 +42,7 @@ export default function AttendancePage() {
 
   const [attendances, setAttendances] = useState([]);
   const [monthlyReport, setMonthlyReport] = useState([]);
-  const [todaySummary, setTodaySummary] = useState([]);
+  const [todaySummary, setTodaySummary] = useState({ total: 0, present: 0, late: 0, halfDay: 0 });
   const [loading, setLoading] = useState(true);
 
   // My personal attendance for quick checkin status
@@ -84,11 +85,11 @@ export default function AttendancePage() {
       }
 
       const results = await Promise.all(promises);
-      setAttendances(results[0].data.data.attendances || []);
+      setAttendances(results[0].data.data?.attendances || results[0].data.data || []);
       setMyTodayAttendance(results[1]?.data?.data || null);
 
       if (isManagementOrHR && results[2]) {
-        setTodaySummary(results[2].data.data || []);
+        setTodaySummary(results[2].data.data || { total: 0, present: 0, late: 0, halfDay: 0 });
       }
     } catch (err) {
       console.error(err);
@@ -140,8 +141,61 @@ export default function AttendancePage() {
   };
 
   const getStatusCount = (statusName) => {
-    const found = todaySummary.find(s => s._id === statusName);
-    return found ? found.count : 0;
+    if (!todaySummary) return 0;
+    if (typeof todaySummary === 'object' && !Array.isArray(todaySummary)) {
+      if (statusName === 'present') return todaySummary.present || 0;
+      if (statusName === 'late') return todaySummary.late || 0;
+      if (statusName === 'half_day') return todaySummary.halfDay || 0;
+      if (statusName === 'total') return todaySummary.total || 0;
+      return todaySummary[statusName] || 0;
+    }
+    if (Array.isArray(todaySummary)) {
+      const found = todaySummary.find(s => s._id === statusName || s.status === statusName);
+      return found ? (found.count || found.total || 0) : 0;
+    }
+    return 0;
+  };
+
+  const calcPunctuality = (a) => {
+    if (!a?.checkIn) return { isLate: false, label: 'Not Checked In', status: 'ABSENT', badgeClass: 'badge-lost', color: 'var(--text-muted)' };
+
+    const checkInDate = new Date(a.checkIn);
+    const hours = checkInDate.getHours();
+    const minutes = checkInDate.getMinutes();
+    const totalMinutes = hours * 60 + minutes;
+    const shiftStartMinutes = 10 * 60; // 10:00 AM (600 mins)
+
+    if (totalMinutes > shiftStartMinutes) {
+      const diff = totalMinutes - shiftStartMinutes;
+      const diffH = Math.floor(diff / 60);
+      const diffM = diff % 60;
+      const duration = diffH > 0 ? `${diffH}h ${diffM}m late` : `${diffM}m late`;
+      return {
+        isLate: true,
+        label: a.lateDuration && a.lateDuration !== 'On Time' ? a.lateDuration : duration,
+        status: totalMinutes >= 13 * 60 ? 'HALF DAY' : 'LATE',
+        badgeClass: 'badge-quotation',
+        color: '#D97706',
+      };
+    }
+
+    return {
+      isLate: false,
+      label: 'On Time',
+      status: 'PRESENT',
+      badgeClass: 'badge-won',
+      color: '#016139',
+    };
+  };
+
+  const formatWorkingHours = (hoursDecimal) => {
+    if (!hoursDecimal || Number(hoursDecimal) <= 0) return '0 hrs';
+    const totalMinutes = Math.round(Number(hoursDecimal) * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) return `${m} mins`;
+    if (m === 0) return `${h} hrs`;
+    return `${h}h ${m}m (${Number(hoursDecimal).toFixed(2)} hrs)`;
   };
 
   const renderDepartmentBadge = (role, department) => {
@@ -163,7 +217,7 @@ export default function AttendancePage() {
           fontWeight: 700,
           textTransform: 'uppercase'
         }}>
-          💻 Development
+          <Code size={12} /> Development
         </span>
       );
     }
@@ -182,7 +236,7 @@ export default function AttendancePage() {
           fontWeight: 700,
           textTransform: 'uppercase'
         }}>
-          💼 Sales
+          <Briefcase size={12} /> Sales
         </span>
       );
     }
@@ -201,7 +255,7 @@ export default function AttendancePage() {
           fontWeight: 700,
           textTransform: 'uppercase'
         }}>
-          📈 Marketing
+          <Megaphone size={12} /> Marketing
         </span>
       );
     }
@@ -220,7 +274,7 @@ export default function AttendancePage() {
           fontWeight: 700,
           textTransform: 'uppercase'
         }}>
-          👔 Management
+          <UserCheck size={12} /> Management
         </span>
       );
     }
@@ -239,7 +293,7 @@ export default function AttendancePage() {
           fontWeight: 700,
           textTransform: 'uppercase'
         }}>
-          👥 HR
+          <UserSquare2 size={12} /> HR
         </span>
       );
     }
@@ -257,7 +311,7 @@ export default function AttendancePage() {
         fontWeight: 700,
         textTransform: 'uppercase'
       }}>
-        👑 {department || role || 'Admin'}
+        <Crown size={12} /> {department || role || 'Admin'}
       </span>
     );
   };
@@ -461,8 +515,8 @@ export default function AttendancePage() {
               </div>
               <div style={{ fontSize: 22, fontWeight: 800, marginTop: 4 }}>
                 {myTodayAttendance ? (
-                  myTodayAttendance.status === 'present' ? '🟢 Present (On Time)' : '🟠 Late Checked In'
-                ) : '⚪ Not Checked In Today'}
+                  myTodayAttendance.status === 'present' ? 'Present (On Time)' : 'Late Checked In'
+                ) : 'Not Checked In Today'}
               </div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>
                 Office Shift: <strong>10:00 AM - 7:00 PM</strong>
@@ -477,7 +531,7 @@ export default function AttendancePage() {
                 {myTodayAttendance?.workingHours
                   ? `${myTodayAttendance.workingHours} hrs`
                   : myTodayAttendance?.checkIn
-                  ? 'In Progress ⏳'
+                  ? 'In Progress'
                   : '0.0 hrs'}
               </div>
             </div>
@@ -489,26 +543,29 @@ export default function AttendancePage() {
       {isManagementOrHR && (
         <div style={{ marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
           <div className="status-tabs">
-            {DEPARTMENTS.map(d => (
-              <button
-                key={d.id}
-                className={`status-tab ${deptFilter === d.id ? 'active' : ''}`}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
-                onClick={() => {
-                  setDeptFilter(d.id);
-                  if (selectedEmployee) {
-                    // check if selected employee matches new department
-                    const empDept = (selectedEmployee.department || selectedEmployee.role || '').toLowerCase();
-                    if (d.id !== 'all' && !empDept.includes(d.id.toLowerCase())) {
-                      setSelectedEmployee(null);
+            {DEPARTMENTS.map(d => {
+              const DeptIcon = d.Icon;
+              return (
+                <button
+                  key={d.id}
+                  className={`status-tab ${deptFilter === d.id ? 'active' : ''}`}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
+                  onClick={() => {
+                    setDeptFilter(d.id);
+                    if (selectedEmployee) {
+                      // check if selected employee matches new department
+                      const empDept = (selectedEmployee.department || selectedEmployee.role || '').toLowerCase();
+                      if (d.id !== 'all' && !empDept.includes(d.id.toLowerCase())) {
+                        setSelectedEmployee(null);
+                      }
                     }
-                  }
-                }}
-              >
-                <span>{d.icon}</span>
-                <span>{d.label.toUpperCase()}</span>
-              </button>
-            ))}
+                  }}
+                >
+                  <DeptIcon size={14} />
+                  <span>{d.label.toUpperCase()}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -524,8 +581,8 @@ export default function AttendancePage() {
                 </h2>
                 {renderDepartmentBadge(selectedEmployee.role, selectedEmployee.department)}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4 }}>
-                ✉️ {selectedEmployee.email} • Shift: <strong>10:00 AM - 7:00 PM</strong>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Mail size={13} /> {selectedEmployee.email} • Shift: <strong>10:00 AM - 7:00 PM</strong>
               </div>
             </div>
 
@@ -720,6 +777,7 @@ export default function AttendancePage() {
                   <th>Shift Timing</th>
                   <th>Check In Time</th>
                   <th>Punctuality Calculation</th>
+                  <th>Breaks Taken</th>
                   <th>Check Out Time</th>
                   <th>Total Working Hours</th>
                   <th>Status</th>
@@ -732,9 +790,10 @@ export default function AttendancePage() {
                     : '-';
                   const checkOutFormatted = a.checkOut
                     ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'In Progress ⏳';
+                    : 'In Progress';
 
                   const dayName = new Date(a.date).toLocaleDateString('en-US', { weekday: 'short' });
+                  const punctuality = calcPunctuality(a);
 
                   return (
                     <tr key={a._id}>
@@ -747,11 +806,11 @@ export default function AttendancePage() {
                         </div>
                       </td>
                       <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
-                      <td style={{ fontWeight: 700, color: a.status === 'late' ? '#D97706' : '#016139' }}>
+                      <td style={{ fontWeight: 700, color: punctuality.color }}>
                         {checkInFormatted}
                       </td>
                       <td>
-                        {a.status === 'late' ? (
+                        {punctuality.isLate ? (
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -764,7 +823,7 @@ export default function AttendancePage() {
                             fontSize: 11,
                             fontWeight: 700,
                           }}>
-                            <Clock size={11} /> {a.lateDuration || 'Late'}
+                            <Clock size={11} /> {punctuality.label}
                           </span>
                         ) : (
                           <span style={{
@@ -779,19 +838,43 @@ export default function AttendancePage() {
                             fontSize: 11,
                             fontWeight: 700,
                           }}>
-                            ✓ On Time
+                            On Time
                           </span>
+                        )}
+                      </td>
+                      <td>
+                        {a.activeBreak ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
+                            <Coffee size={11} /> {a.activeBreak.type} (Live)
+                          </span>
+                        ) : a.totalBreakMinutes > 0 ? (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
+                            color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
+                            border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
+                            fontWeight: 700,
+                            fontSize: 11
+                          }}>
+                            <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
                         )}
                       </td>
                       <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
                       <td>
                         <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
-                          {a.workingHours ? `${a.workingHours} hrs` : (a.currentLiveHours ? `~${a.currentLiveHours} hrs (Live)` : 'In Progress')}
+                          {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
                         </span>
                       </td>
                       <td>
-                        <span className={`badge badge-${a.status === 'present' ? 'won' : a.status === 'late' ? 'quotation' : 'lost'}`}>
-                          {a.status.toUpperCase()}
+                        <span className={`badge ${punctuality.badgeClass}`}>
+                          {punctuality.status}
                         </span>
                       </td>
                     </tr>
@@ -818,6 +901,7 @@ export default function AttendancePage() {
                   <th>Shift Timing</th>
                   <th>Check In Time</th>
                   <th>Late Duration</th>
+                  <th>Breaks Taken</th>
                   <th>Check Out Time</th>
                   <th>Total Working Hours</th>
                   <th>Punctuality Status</th>
@@ -831,10 +915,11 @@ export default function AttendancePage() {
                     : '-';
                   const checkOutFormatted = a.checkOut
                     ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'In Progress ⏳';
+                    : 'In Progress';
 
                   const empRole = a.employee?.role || user?.role;
                   const empDept = a.employee?.department || user?.department;
+                  const punctuality = calcPunctuality(a);
 
                   return (
                     <tr key={a._id}>
@@ -857,11 +942,11 @@ export default function AttendancePage() {
                         {renderDepartmentBadge(empRole, empDept)}
                       </td>
                       <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
-                      <td style={{ fontWeight: 700, color: a.status === 'late' ? '#D97706' : '#016139' }}>
+                      <td style={{ fontWeight: 700, color: punctuality.color }}>
                         {checkInFormatted}
                       </td>
                       <td>
-                        {a.status === 'late' ? (
+                        {punctuality.isLate ? (
                           <span style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -874,7 +959,7 @@ export default function AttendancePage() {
                             fontSize: 11,
                             fontWeight: 700,
                           }}>
-                            <Clock size={11} /> {a.lateDuration || 'Late'}
+                            <Clock size={11} /> {punctuality.label}
                           </span>
                         ) : (
                           <span style={{
@@ -889,29 +974,53 @@ export default function AttendancePage() {
                             fontSize: 11,
                             fontWeight: 700,
                           }}>
-                            ✓ On Time
+                            On Time
                           </span>
+                        )}
+                      </td>
+                      <td>
+                        {a.activeBreak ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
+                            <Coffee size={11} /> {a.activeBreak.type} (Live)
+                          </span>
+                        ) : a.totalBreakMinutes > 0 ? (
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '3px 8px',
+                            borderRadius: 6,
+                            background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
+                            color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
+                            border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
+                            fontWeight: 700,
+                            fontSize: 11
+                          }}>
+                            <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
                         )}
                       </td>
                       <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
                       <td>
                         <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
-                          {a.workingHours ? `${a.workingHours} hrs` : (a.currentLiveHours ? `~${a.currentLiveHours} hrs (Live)` : 'In Progress')}
+                          {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
                         </span>
                       </td>
                       <td>
-                        <span className={`badge badge-${a.status === 'present' ? 'won' : a.status === 'late' ? 'quotation' : 'lost'}`}>
-                          {a.status.toUpperCase()}
+                        <span className={`badge ${punctuality.badgeClass}`}>
+                          {punctuality.status}
                         </span>
                       </td>
                       {isManagementOrHR && (
                         <td>
                           <button
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700 }}
+                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onClick={() => a.employee && handleSelectEmployeeDrilldown(a.employee)}
                           >
-                            Month Log 🗓️
+                            <Calendar size={11} /> Month Log
                           </button>
                         </td>
                       )}
@@ -992,10 +1101,10 @@ export default function AttendancePage() {
                         <td>
                           <button
                             className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700 }}
+                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             onClick={() => handleSelectEmployeeDrilldown({ _id: m.employeeId, name: m.name, email: m.email, department: m.department, role: m.role })}
                           >
-                            View Details 🔍
+                            <Eye size={11} /> View Details
                           </button>
                         </td>
                       </tr>
@@ -1034,7 +1143,7 @@ export default function AttendancePage() {
                           {a.lateDuration || 'Late'}
                         </span>
                       ) : (
-                        <span style={{ color: '#016139', fontWeight: 700, fontSize: 11 }}>✓ On Time</span>
+                        <span style={{ color: '#016139', fontWeight: 700, fontSize: 11 }}>On Time</span>
                       )}
                     </td>
                     <td>{a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress'}</td>

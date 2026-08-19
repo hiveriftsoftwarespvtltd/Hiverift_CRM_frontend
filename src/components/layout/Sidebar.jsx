@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Settings,
   Zap,
+  Receipt,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -88,7 +89,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {
           title: 'TEAM',
           items: [
-            { label: 'Employees', path: '/team/employees', icon: <UserCog size={18} /> },
+            { label: 'Employees', path: '/employees', icon: <UserCog size={18} /> },
             { label: 'Attendance', path: '/attendance', icon: <Clock size={18} /> },
             { label: 'Leaves', path: '/leaves', icon: <CalendarDays size={18} /> },
           ],
@@ -112,6 +113,7 @@ export default function Sidebar({ isOpen, onClose }) {
           { label: 'Leads', path: '/leads', icon: <UserCheck size={18} /> },
           { label: 'Telecalling', path: '/calling', icon: <PhoneCall size={18} /> },
           { label: 'Quotations', path: '/quotations', icon: <FileText size={18} /> },
+          { label: 'Invoices', path: '/invoices', icon: <Receipt size={18} /> },
           { label: 'Clients', path: '/clients', icon: <Users size={18} /> },
         ],
       },
@@ -127,7 +129,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {
         title: 'TEAM',
         items: [
-          { label: 'Employees', path: '/team/employees', icon: <UserCog size={18} /> },
+          { label: 'Employees', path: '/employees', icon: <UserCog size={18} /> },
           { label: 'Attendance', path: '/attendance', icon: <Clock size={18} /> },
           { label: 'Leaves', path: '/leaves', icon: <CalendarDays size={18} /> },
         ],
@@ -152,30 +154,17 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`crm-sidebar ${isOpen ? 'open' : ''}`}>
       {/* Brand Header */}
       <div className="sidebar-logo">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: '#016139',
-              border: '1px solid rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Zap size={18} color="white" />
-          </div>
-          <div>
-            <div className="sidebar-logo-text" style={{ fontSize: 18, fontWeight: 700, color: 'white', letterSpacing: '-0.3px' }}>
-              HiveRift
-            </div>
-            <div className="sidebar-logo-sub" style={{ fontSize: 11, color: '#A8C9BE', marginTop: -2 }}>
-              CRM Platform
-            </div>
-          </div>
-        </div>
+        <img
+          src="/logo.png"
+          alt="HiveRift"
+          style={{
+            height: 40,
+            width: 'auto',
+            maxWidth: 180,
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
       </div>
 
       {/* Nav Items */}

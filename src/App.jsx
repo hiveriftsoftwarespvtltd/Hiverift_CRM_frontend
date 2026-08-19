@@ -18,6 +18,7 @@ import LeadDetailPage from './pages/leads/LeadDetailPage';
 import ClientsPage from './pages/clients/ClientsPage';
 import ClientDetailPage from './pages/clients/ClientDetailPage';
 import QuotationsPage from './pages/sales/QuotationsPage';
+import InvoicesPage from './pages/invoices/InvoicesPage';
 
 // Operations
 import ProjectsPage from './pages/projects/ProjectsPage';
@@ -61,8 +62,9 @@ export default function App() {
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/clients/:id" element={<ClientDetailPage />} />
 
-              {/* Quotations */}
+              {/* Quotations & Invoices */}
               <Route path="/quotations" element={<QuotationsPage />} />
+              <Route path="/invoices" element={<InvoicesPage />} />
 
               {/* Operations */}
               <Route path="/projects" element={<ProjectsPage />} />
@@ -73,7 +75,9 @@ export default function App() {
 
               {/* HR & Team */}
               <Route path="/attendance" element={<AttendancePage />} />
+              <Route path="/team/attendance" element={<AttendancePage />} />
               <Route path="/leaves" element={<LeavesPage />} />
+              <Route path="/team/leaves" element={<LeavesPage />} />
               <Route path="/employees" element={<EmployeesPage />} />
               <Route path="/team/employees" element={<EmployeesPage />} />
 

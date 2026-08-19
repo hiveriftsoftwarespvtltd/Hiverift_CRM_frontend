@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { clientsAPI, projectsAPI, paymentsAPI, renewalsAPI } from '../../api';
-import { ArrowLeft, Building, Phone, Mail, FolderKanban, CreditCard, RefreshCw, Plus, FileText } from 'lucide-react';
+import { ArrowLeft, Building, Phone, Mail, FolderKanban, CreditCard, RefreshCw, Plus, FileText, Edit3, ShieldCheck, MapPin, FileCheck, Info } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function ClientDetailPage() {
   const { id } = useParams();
@@ -11,6 +12,11 @@ export default function ClientDetailPage() {
   const [payments, setPayments] = useState([]);
   const [renewals, setRenewals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '', status: 'active'
+  });
 
   useEffect(() => {
     fetchClient360();
@@ -25,7 +31,20 @@ export default function ClientDetailPage() {
         paymentsAPI.getAll({ client: id }),
         renewalsAPI.getAll({ client: id }),
       ]);
-      setClient(cRes.data.data);
+      const clientData = cRes.data.data;
+      setClient(clientData);
+      setFormData({
+        name: clientData.name || '',
+        company: clientData.company || '',
+        phone: clientData.phone || '',
+        whatsapp: clientData.whatsapp || clientData.phone || '',
+        email: clientData.email || '',
+        city: clientData.city || '',
+        address: clientData.address || '',
+        gstin: clientData.gstin || '',
+        notes: clientData.notes || '',
+        status: clientData.status || 'active',
+      });
       setProjects(prRes.data.data.projects || []);
       setPayments(payRes.data.data.payments || []);
       setRenewals(renRes.data.data.renewals || []);
@@ -33,6 +52,43 @@ export default function ClientDetailPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenEdit = () => {
+    if (client) {
+      setFormData({
+        name: client.name || '',
+        company: client.company || '',
+        phone: client.phone || '',
+        whatsapp: client.whatsapp || client.phone || '',
+        email: client.email || '',
+        city: client.city || '',
+        address: client.address || '',
+        gstin: client.gstin || '',
+        notes: client.notes || '',
+        status: client.status || 'active',
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleUpdateClient = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...formData };
+      await clientsAPI.update(id, payload);
+      Swal.fire({
+        icon: 'success',
+        title: 'Client Details Updated!',
+        text: `360° Account for ${formData.name || 'Client'} has been updated successfully.`,
+        timer: 1500,
+        showConfirmButton: false
+      });
+      setShowEditModal(false);
+      fetchClient360();
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Failed to update client details' });
     }
   };
 
@@ -49,29 +105,104 @@ export default function ClientDetailPage() {
       <div className="card" style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <div className="avatar avatar-lg" style={{ background: '#014D3B', color: 'white' }}>
-              {client.name.charAt(0)}
+            <div className="avatar avatar-lg" style={{ background: '#014D3B', color: 'white', fontWeight: 800 }}>
+              {client.name?.charAt(0)}
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--text-heading)' }}>{client.name}</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, color: 'var(--text-heading)' }}>{client.name}</h1>
                 <span className="badge badge-won">{client.clientId}</span>
+                <span className={`badge ${client.status === 'active' ? 'badge-won' : 'badge-lost'}`}>
+                  {client.status ? client.status.toUpperCase() : 'ACTIVE'}
+                </span>
               </div>
               <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
-                {client.company || 'Individual Client'} • {client.city || 'No location'}
+                <Building size={13} style={{ display: 'inline', marginRight: 4 }} />
+                <strong>{client.company || 'Individual Client'}</strong> • {client.city || 'Location not set'}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button className="btn btn-primary" onClick={() => navigate(`/projects?client=${client._id}`)}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              className="btn btn-secondary"
+              onClick={handleOpenEdit}
+              style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Edit3 size={15} color="var(--primary)" /> Edit / Update Details
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => navigate(`/quotations?client=${client._id}`)}
+              style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <FileText size={15} /> Create Quote
+            </button>
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate(`/projects?client=${client._id}`)}
+              style={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}
+            >
               <Plus size={16} /> Create Project
             </button>
           </div>
         </div>
 
+        {/* Detailed Client Info Grid */}
+        <div style={{
+          marginTop: 18,
+          paddingTop: 16,
+          borderTop: '1px solid var(--border)',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 16,
+          background: '#f8fafc',
+          padding: '14px 18px',
+          borderRadius: 8
+        }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Phone Number</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Phone size={13} color="var(--primary)" /> {client.phone || 'N/A'}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Email Address</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Mail size={13} color="var(--primary)" /> {client.email || 'No email provided'}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>City / Location</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <MapPin size={13} color="var(--primary)" /> {client.city || client.address || 'N/A'}
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>GSTIN / Tax ID</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', marginTop: 2, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <FileCheck size={13} color="var(--primary)" /> {client.gstin || 'Unregistered'}
+            </div>
+          </div>
+        </div>
+
+        {client.address && (
+          <div style={{ marginTop: 12, fontSize: 12, color: '#475569' }}>
+            <strong>Billing Address:</strong> {client.address}
+          </div>
+        )}
+
+        {client.notes && (
+          <div style={{ marginTop: 8, fontSize: 12, color: '#475569', fontStyle: 'italic' }}>
+            <strong>Client Notes / Requirements:</strong> {client.notes}
+          </div>
+        )}
+
         {/* Stats Summary */}
-        <div className="grid-3" style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+        <div className="grid-3" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <div>
             <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Total Business Value</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: '#10B981' }}>₹{client.totalBusiness?.toLocaleString() || 0}</div>
@@ -192,6 +323,141 @@ export default function ClientDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Pop-up Modal for Editing Client Details */}
+      {showEditModal && (
+        <div className="modal-overlay">
+          <div className="modal modal-lg">
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Edit3 size={18} color="var(--primary)" />
+                <h3 className="modal-title">Update Client Profile — {client.clientId}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleUpdateClient}>
+              <div className="modal-body">
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label required">Client / Representative Name</label>
+                    <input
+                      className="form-input"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={formData.name}
+                      onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Company / Entity Name</label>
+                    <input
+                      className="form-input"
+                      placeholder="e.g. Acme Corp Pvt Ltd"
+                      value={formData.company}
+                      onChange={e => setFormData({ ...formData, company: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label required">Phone Number</label>
+                    <input
+                      className="form-input"
+                      required
+                      placeholder="+91 98765 43210"
+                      value={formData.phone}
+                      onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">WhatsApp Number</label>
+                    <input
+                      className="form-input"
+                      placeholder="+91 98765 43210"
+                      value={formData.whatsapp}
+                      onChange={e => setFormData({ ...formData, whatsapp: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      className="form-input"
+                      type="email"
+                      placeholder="client@company.com"
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Account Status</label>
+                    <select
+                      className="form-select"
+                      value={formData.status}
+                      onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    >
+                      <option value="active">ACTIVE</option>
+                      <option value="inactive">INACTIVE</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">City / Region</label>
+                    <input
+                      className="form-input"
+                      placeholder="e.g. New Delhi"
+                      value={formData.city}
+                      onChange={e => setFormData({ ...formData, city: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">GSTIN / Tax ID</label>
+                    <input
+                      className="form-input"
+                      placeholder="e.g. 07AAAAA0000A1Z5"
+                      value={formData.gstin}
+                      onChange={e => setFormData({ ...formData, gstin: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Billing Address</label>
+                  <textarea
+                    className="form-textarea"
+                    rows="2"
+                    placeholder="Enter full office / billing address..."
+                    value={formData.address}
+                    onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Client Notes & Requirements</label>
+                  <textarea
+                    className="form-textarea"
+                    rows="2"
+                    placeholder="Project notes, custom requests, contract terms..."
+                    value={formData.notes}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Update Client Profile</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

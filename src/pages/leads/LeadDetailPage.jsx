@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { leadsAPI, clientsAPI } from '../../api';
-import { Phone, Mail, MessageSquare, Calendar, User, FileText, ArrowLeft, Plus, Award } from 'lucide-react';
+import { leadsAPI, clientsAPI, usersAPI } from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import { Phone, Mail, MessageSquare, Calendar, User, FileText, ArrowLeft, Plus, Award, Edit3, MapPin, Building, DollarSign } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 const LEAD_STATUSES = ['new', 'assigned', 'contacted', 'interested', 'requirement', 'quotation', 'negotiation', 'won', 'lost'];
+const LEAD_SOURCES = ['facebook', 'google', 'website', 'referral', 'calling', 'whatsapp', 'other'];
 
 export default function LeadDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdminOrManager = user?.role === 'admin' || user?.role === 'management';
+
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [salesUsers, setSalesUsers] = useState([]);
 
   // Follow-up Modal
   const [showFollowupModal, setShowFollowupModal] = useState(false);
@@ -18,11 +24,18 @@ export default function LeadDetailPage() {
     date: new Date().toISOString().split('T')[0], type: 'call', notes: '', outcome: '', nextAction: ''
   });
 
+  // Edit Lead Modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: '', company: '', phone: '', whatsapp: '', email: '', city: '', requirement: '', source: 'website', estimatedValue: '', assignedTo: ''
+  });
+
   // Note State
   const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
     fetchLead();
+    fetchSalesUsers();
   }, [id]);
 
   const fetchLead = async () => {
@@ -37,10 +50,64 @@ export default function LeadDetailPage() {
     }
   };
 
+  const fetchSalesUsers = async () => {
+    try {
+      const { data } = await usersAPI.getAll({ limit: 100 });
+      setSalesUsers(data.data.users || []);
+    } catch { }
+  };
+
+  const handleOpenEdit = () => {
+    if (!lead) return;
+    setEditFormData({
+      name: lead.name || '',
+      company: lead.company || '',
+      phone: lead.phone || '',
+      whatsapp: lead.whatsapp || '',
+      email: lead.email || '',
+      city: lead.city || '',
+      requirement: lead.requirement || '',
+      source: lead.source || 'website',
+      estimatedValue: lead.estimatedValue || '',
+      assignedTo: lead.assignedTo?._id || lead.assignedTo || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = { ...editFormData };
+      Object.keys(payload).forEach(key => {
+        if (payload[key] === '' || payload[key] === null || payload[key] === undefined) {
+          delete payload[key];
+        }
+      });
+      if (editFormData.estimatedValue) payload.estimatedValue = Number(editFormData.estimatedValue);
+
+      await leadsAPI.update(id, payload);
+      Swal.fire({ icon: 'success', title: 'Lead Updated!', text: 'Contact details updated successfully', timer: 1500, showConfirmButton: false });
+      setShowEditModal(false);
+      fetchLead();
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Could not update lead' });
+    }
+  };
+
   const handleStatusChange = async (newStatus) => {
     try {
       await leadsAPI.updateStatus(id, newStatus);
-      Swal.fire({ icon: 'success', title: 'Status Updated', timer: 1200, showConfirmButton: false });
+      if (newStatus === 'won') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Deal Won! Client Created!',
+          text: `Lead marked as WON and converted into an Active Client in Client Directory automatically.`,
+          timer: 2500,
+          showConfirmButton: true
+        });
+      } else {
+        Swal.fire({ icon: 'success', title: 'Status Updated', timer: 1200, showConfirmButton: false });
+      }
       fetchLead();
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Failed', text: 'Status update failed' });
@@ -78,68 +145,27 @@ export default function LeadDetailPage() {
 
   const handleConvertToClient = async () => {
     const res = await Swal.fire({
-      title: 'Convert Lead to Client? 🎉',
-      text: `Mark deal as WON and create Client profile for "${lead.company || lead.name}".`,
+      title: 'Mark Won & Convert to Client?',
+      text: `Mark deal as WON and create active Client profile for "${lead.company || lead.name}".`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#10B981',
-      confirmButtonText: 'Yes, Convert to Client',
+      confirmButtonText: 'Yes, Mark Won',
     });
 
     if (res.isConfirmed) {
       try {
-        const clientRes = await clientsAPI.create({
-          name: lead.name,
-          company: lead.company,
-          phone: lead.phone,
-          whatsapp: lead.whatsapp,
-          email: lead.email,
-          city: lead.city,
-          leadRef: lead._id,
-          assignedSales: lead.assignedTo?._id,
-          notes: lead.requirement,
-        });
-
         await leadsAPI.updateStatus(id, 'won');
-        const createdClient = clientRes.data.data;
-
-        // Post-Sale Won Guided Wizard
-        const wizardRes = await Swal.fire({
+        Swal.fire({
           icon: 'success',
-          title: '🎉 DEAL WON & CLIENT CREATED!',
-          html: `
-            <p style="font-size:14px; color:#42524E; margin-bottom:16px">
-              Client profile for <strong>${createdClient.name}</strong> is now active.
-            </p>
-            <div style="display:flex; flex-direction:column; gap:10px">
-              <button id="btn-wizard-payment" class="swal2-confirm swal2-styled" style="background:#10B981; margin:0">
-                💳 Record Advance Payment
-              </button>
-              <button id="btn-wizard-project" class="swal2-confirm swal2-styled" style="background:#016139; margin:0">
-                📁 Create Project & Assign Tech Team
-              </button>
-            </div>
-          `,
-          showConfirmButton: false,
-          showCancelButton: true,
-          cancelButtonText: 'Go to Client Portfolio',
-          didOpen: () => {
-            document.getElementById('btn-wizard-payment')?.addEventListener('click', () => {
-              Swal.close();
-              navigate(`/payments?client=${createdClient._id}`);
-            });
-            document.getElementById('btn-wizard-project')?.addEventListener('click', () => {
-              Swal.close();
-              navigate(`/projects?client=${createdClient._id}&lead=${lead._id}`);
-            });
-          }
+          title: 'Deal Won! Client Created!',
+          text: `Client profile for "${lead.company || lead.name}" is now active in Client Directory.`,
+          timer: 2500,
+          showConfirmButton: true
         });
-
-        if (wizardRes.isDismissed) {
-          navigate(`/clients/${createdClient._id}`);
-        }
+        fetchLead();
       } catch (err) {
-        Swal.fire({ icon: 'error', title: 'Conversion Failed', text: err.response?.data?.message || 'Error converting lead' });
+        Swal.fire({ icon: 'error', title: 'Conversion Failed', text: err.response?.data?.message || 'Could not convert lead' });
       }
     }
   };
@@ -177,12 +203,16 @@ export default function LeadDetailPage() {
                 </span>
               </div>
               <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
-                {lead.company || 'Individual Lead'} • Source: <strong>{lead.source}</strong>
+                {lead.company || 'Individual Lead'} • Source: <strong>{lead.source}</strong> {lead.city ? `• City: ${lead.city}` : ''}
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {/* Edit Lead Button */}
+            <button className="btn btn-secondary" onClick={handleOpenEdit}>
+              <Edit3 size={15} style={{ color: 'var(--primary)' }} /> Edit Lead
+            </button>
             {lead.status !== 'won' && (
               <button className="btn btn-primary" style={{ background: '#10B981' }} onClick={handleConvertToClient}>
                 <Award size={16} /> Mark Won & Convert
@@ -204,12 +234,12 @@ export default function LeadDetailPage() {
           </a>
           {lead.whatsapp && (
             <a href={`https://wa.me/${lead.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>
-              <MessageSquare size={14} color="#10B981" /> WhatsApp
+              <MessageSquare size={14} color="#10B981" /> WhatsApp: {lead.whatsapp}
             </a>
           )}
           {lead.email && (
             <a href={`mailto:${lead.email}`} className="btn btn-ghost btn-sm" style={{ textDecoration: 'none' }}>
-              <Mail size={14} color="#8B5CF6" /> Email
+              <Mail size={14} color="#8B5CF6" /> Email: {lead.email}
             </a>
           )}
         </div>
@@ -219,140 +249,297 @@ export default function LeadDetailPage() {
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8, textTransform: 'uppercase' }}>
             Update Status Lifecycle:
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {LEAD_STATUSES.map(st => (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            {LEAD_STATUSES.map(s => (
               <button
-                key={st}
-                onClick={() => handleStatusChange(st)}
-                className={`btn btn-sm ${lead.status === st ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ fontSize: 12, textTransform: 'capitalize' }}
+                key={s}
+                className={`btn btn-sm ${lead.status === s ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: 11, padding: '4px 10px', textTransform: 'uppercase' }}
+                onClick={() => handleStatusChange(s)}
               >
-                {st.replace('_', ' ')}
+                {s}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="grid-3" style={{ gridTemplateColumns: '2fr 1fr' }}>
-        {/* Left column — Timeline & Requirement */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {/* Requirement */}
-          <div className="card">
-            <h3 className="card-title">Requirement Overview</h3>
-            <p style={{ fontSize: 14, color: 'var(--text-body)', lineHeight: 1.6, margin: '8px 0 0' }}>
-              {lead.requirement || 'No specific requirement details provided yet.'}
-            </p>
-          </div>
+      {/* Grid: Details + Timeline & Notes */}
+      <div className="grid-2" style={{ gridTemplateColumns: '1fr 2fr', alignItems: 'start' }}>
+        {/* Left Column: Lead Info Profile */}
+        <div className="card">
+          <h3 className="card-title" style={{ marginBottom: 16 }}>Lead Profile & Requirements</h3>
 
-          {/* Follow-up Timeline */}
-          <div className="card">
-            <div className="card-header">
-              <h3 className="card-title">Follow-up History & Timeline</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setShowFollowupModal(true)}>+ Add</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Contact Name</div>
+              <div style={{ fontWeight: 600, color: 'var(--text-heading)', fontSize: 15 }}>{lead.name}</div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {lead.followups?.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No follow-ups recorded yet.</p>
-              ) : lead.followups.map((f, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, paddingBottom: 12, borderBottom: i < lead.followups.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Calendar size={16} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
-                        {f.type?.toUpperCase()} Follow-up
-                      </span>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                        {new Date(f.date).toLocaleDateString()}
-                      </span>
-                    </div>
-                    {f.notes && <p style={{ fontSize: 13, color: 'var(--text-body)', margin: '4px 0 0' }}>{f.notes}</p>}
-                    {f.outcome && <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 2 }}>Outcome: {f.outcome}</div>}
-                    {f.nextAction && <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 2 }}>Next: {f.nextAction}</div>}
-                  </div>
-                </div>
-              ))}
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Company</div>
+              <div style={{ fontWeight: 500 }}>{lead.company || '-'}</div>
             </div>
-          </div>
 
-          {/* Quick Notes */}
-          <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 12 }}>Sales Notes</h3>
-            <form onSubmit={handleAddNote} style={{ marginBottom: 16, display: 'flex', gap: 10 }}>
-              <input
-                className="form-input"
-                placeholder="Add a internal note..."
-                value={noteText}
-                onChange={e => setNoteText(e.target.value)}
-              />
-              <button type="submit" className="btn btn-primary btn-sm">Add Note</button>
-            </form>
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Phone & WhatsApp</div>
+              <div style={{ fontWeight: 600, color: '#016139' }}>{lead.phone}</div>
+              {lead.whatsapp && lead.whatsapp !== lead.phone && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>WA: {lead.whatsapp}</div>
+              )}
+            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {lead.notes?.map((n, i) => (
-                <div key={i} style={{ padding: 10, background: 'var(--bg-secondary)', borderRadius: 8, fontSize: 13 }}>
-                  <div style={{ color: 'var(--text-body)' }}>{n.text}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                    {new Date(n.createdAt).toLocaleString()}
-                  </div>
-                </div>
-              ))}
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Email</div>
+              <div style={{ fontWeight: 500 }}>{lead.email || '-'}</div>
+            </div>
+
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>City / Location</div>
+              <div style={{ fontWeight: 500 }}>{lead.city || '-'}</div>
+            </div>
+
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Estimated Value</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
+                ₹{lead.estimatedValue?.toLocaleString() || 0}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Assigned Sales Representative</div>
+              <div style={{ fontWeight: 600 }}>{lead.assignedTo?.name || 'Unassigned'}</div>
+            </div>
+
+            <div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Detailed Requirements</div>
+              <div style={{
+                background: 'var(--bg-secondary)',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                marginTop: 4,
+                lineHeight: 1.5,
+                color: 'var(--text-heading)'
+              }}>
+                {lead.requirement || 'No detailed requirements provided yet.'}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right column — Key Info */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        {/* Right Column: Follow-ups & Notes */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {/* Notes Section */}
           <div className="card">
-            <h3 className="card-title" style={{ marginBottom: 16 }}>Lead Details</h3>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13 }}>
-              <div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Estimated Deal Value</div>
-                <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--primary)' }}>
-                  ₹{lead.estimatedValue?.toLocaleString() || '0'}
-                </div>
+            <h3 className="card-title" style={{ marginBottom: 16 }}>Internal Collaboration Notes</h3>
+            <form onSubmit={handleAddNote} style={{ marginBottom: 16 }}>
+              <textarea
+                className="form-textarea"
+                rows="2"
+                placeholder="Add a quick note or update about this lead..."
+                value={noteText}
+                onChange={e => setNoteText(e.target.value)}
+              />
+              <div style={{ textAlign: 'right', marginTop: 8 }}>
+                <button type="submit" className="btn btn-primary btn-sm">Add Note</button>
               </div>
+            </form>
 
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Assigned Sales Person</div>
-                <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                  {lead.assignedTo?.name || 'Unassigned'}
-                </div>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {lead.notes && lead.notes.length > 0 ? (
+                lead.notes.map((note, idx) => (
+                  <div key={idx} style={{ background: 'var(--bg-secondary)', padding: '10px 14px', borderRadius: 8, fontSize: 13 }}>
+                    <div style={{ color: 'var(--text-heading)', whiteSpace: 'pre-wrap' }}>{note.text}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
+                      By <strong>{note.createdBy?.name || 'Staff'}</strong> • {new Date(note.createdAt).toLocaleString()}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 12 }}>No notes added yet.</div>
+              )}
+            </div>
+          </div>
 
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>City / Location</div>
-                <div style={{ fontWeight: 500 }}>{lead.city || 'Not specified'}</div>
-              </div>
+          {/* Follow-up Timeline */}
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3 className="card-title" style={{ margin: 0 }}>Follow-up Activity Timeline</h3>
+              <button className="btn btn-secondary btn-sm" onClick={() => setShowFollowupModal(true)}>
+                <Plus size={14} /> Schedule Follow-up
+              </button>
+            </div>
 
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Next Follow-up Date</div>
-                <div style={{ fontWeight: 600, color: lead.nextFollowup ? 'var(--primary)' : 'var(--text-muted)' }}>
-                  {lead.nextFollowup ? new Date(lead.nextFollowup).toLocaleDateString() : 'None Scheduled'}
-                </div>
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 12 }}>Created Date</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  {new Date(lead.createdAt).toLocaleString()}
-                </div>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {lead.followups && lead.followups.length > 0 ? (
+                lead.followups.map((f, idx) => (
+                  <div key={idx} style={{ borderLeft: '3px solid var(--primary)', paddingLeft: 12, paddingBottom: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-secondary)' }}>
+                      <span>
+                        <strong>{f.type?.toUpperCase()}</strong>
+                        {f.createdBy?.name && <span style={{ marginLeft: 6, color: 'var(--text-muted)' }}>(by {f.createdBy.name})</span>}
+                        {' '}• {new Date(f.date).toLocaleDateString()}
+                      </span>
+                      <span className={`badge badge-${f.status}`}>{f.status}</span>
+                    </div>
+                    {f.notes && <div style={{ fontSize: 13, marginTop: 4, color: 'var(--text-heading)' }}>{f.notes}</div>}
+                    {f.nextAction && <div style={{ fontSize: 12, color: 'var(--primary)', marginTop: 2 }}>Next Action: {f.nextAction}</div>}
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: 13, textAlign: 'center', padding: 12 }}>No follow-ups logged yet.</div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Add Followup Modal */}
+      {/* Edit Lead Modal */}
+      {showEditModal && (
+        <div className="modal-overlay">
+          <div className="modal modal-lg">
+            <div className="modal-header">
+              <h3 className="modal-title">Edit Lead Details ({lead.leadId})</h3>
+              <button className="modal-close" onClick={() => setShowEditModal(false)}>×</button>
+            </div>
+            <form onSubmit={handleSaveEdit}>
+              <div className="modal-body">
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label required">Contact Name</label>
+                    <input
+                      className="form-input"
+                      required
+                      value={editFormData.name}
+                      onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Company Name</label>
+                    <input
+                      className="form-input"
+                      value={editFormData.company}
+                      onChange={e => setEditFormData({ ...editFormData, company: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label required">Phone Number</label>
+                    <input
+                      className="form-input"
+                      required
+                      value={editFormData.phone}
+                      onChange={e => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">WhatsApp Number</label>
+                    <input
+                      className="form-input"
+                      value={editFormData.whatsapp}
+                      onChange={e => setEditFormData({ ...editFormData, whatsapp: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={editFormData.email}
+                      onChange={e => setEditFormData({ ...editFormData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">City / Location</label>
+                    <input
+                      className="form-input"
+                      value={editFormData.city}
+                      onChange={e => setEditFormData({ ...editFormData, city: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Requirement Details</label>
+                  <textarea
+                    className="form-textarea"
+                    rows="3"
+                    value={editFormData.requirement}
+                    onChange={e => setEditFormData({ ...editFormData, requirement: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid-3">
+                  <div className="form-group">
+                    <label className="form-label">Lead Source</label>
+                    <select
+                      className="form-select"
+                      value={editFormData.source}
+                      onChange={e => setEditFormData({ ...editFormData, source: e.target.value })}
+                    >
+                      {LEAD_SOURCES.map(s => (
+                        <option key={s} value={s}>{s.toUpperCase()}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Estimated Value (₹)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={editFormData.estimatedValue}
+                      onChange={e => setEditFormData({ ...editFormData, estimatedValue: e.target.value })}
+                    />
+                  </div>
+
+                  {isAdminOrManager ? (
+                    <div className="form-group">
+                      <label className="form-label">Assign Sales Rep</label>
+                      <select
+                        className="form-select"
+                        value={editFormData.assignedTo}
+                        onChange={e => setEditFormData({ ...editFormData, assignedTo: e.target.value })}
+                      >
+                        <option value="">Select Executive</option>
+                        {salesUsers.map(u => (
+                          <option key={u._id} value={u._id}>{u.name} ({u.role?.toUpperCase()})</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label className="form-label">Assigned Executive</label>
+                      <input
+                        className="form-input"
+                        disabled
+                        value={`${lead?.assignedTo?.name || user?.name || 'You'} (${lead?.assignedTo?.role?.toUpperCase() || 'Sales'})`}
+                        style={{ background: '#f8fafc', color: '#016139', fontWeight: 700, borderColor: '#a7f3d0' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Changes</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-up Modal */}
       {showFollowupModal && (
         <div className="modal-overlay">
           <div className="modal">
             <div className="modal-header">
-              <h3 className="modal-title">Schedule Follow-up</h3>
+              <h3 className="modal-title">Schedule Follow-up for {lead.name}</h3>
               <button className="modal-close" onClick={() => setShowFollowupModal(false)}>×</button>
             </div>
             <form onSubmit={handleAddFollowup}>
@@ -369,13 +556,13 @@ export default function LeadDetailPage() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Call Type</label>
+                    <label className="form-label">Interaction Type</label>
                     <select
                       className="form-select"
                       value={followupData.type}
                       onChange={e => setFollowupData({ ...followupData, type: e.target.value })}
                     >
-                      <option value="call">Call</option>
+                      <option value="call">Phone Call</option>
                       <option value="whatsapp">WhatsApp</option>
                       <option value="email">Email</option>
                       <option value="meeting">Meeting</option>

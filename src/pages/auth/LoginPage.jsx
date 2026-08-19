@@ -1,17 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Eye, EyeOff, Zap, ArrowRight, Lock, Mail, UserCheck, ShieldCheck } from 'lucide-react';
+import { Eye, EyeOff, Zap, ArrowRight, Lock, Mail } from 'lucide-react';
 import Swal from 'sweetalert2';
-
-const DEMO_ROLES = [
-  { role: 'Admin', email: 'vineetvineet8006@gmail.com', pass: '123456', badge: '👑', label: 'Super Admin' },
-  { role: 'Sales', email: 'sales@hiverift.com', pass: 'password123', badge: '💰', label: 'Sales Executive' },
-  { role: 'Manager', email: 'management@hiverift.com', pass: 'password123', badge: '👔', label: 'General Manager' },
-  { role: 'Marketing', email: 'marketing@hiverift.com', pass: 'password123', badge: '📢', label: 'Digital Marketer' },
-  { role: 'Dev', email: 'dev@hiverift.com', pass: 'password123', badge: '💻', label: 'Fullstack Dev' },
-  { role: 'HR', email: 'hr@hiverift.com', pass: 'password123', badge: '👨‍💼', label: 'HR Manager' },
-];
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -21,8 +12,6 @@ export default function LoginPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [showDemoChips, setShowDemoChips] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -43,7 +32,7 @@ export default function LoginPage() {
       const userData = await login(email, password);
       await Swal.fire({
         icon: 'success',
-        title: `Welcome back, ${userData.name}! 👋`,
+        title: `Welcome back, ${userData.name}!`,
         text: `Role: ${userData.role?.toUpperCase()}`,
         timer: 1500,
         showConfirmButton: false,
@@ -56,13 +45,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fillDemoUser = (dRole) => {
-    setEmail(dRole.email);
-    setPassword(dRole.pass);
-    setSelectedRole(dRole.role);
-    setErrors({});
   };
 
   return (
@@ -101,25 +83,20 @@ export default function LoginPage() {
       }}>
         {/* Left Side — Branding & Feature List */}
         <div style={{ flex: '1 1 420px', color: '#ffffff', maxWidth: 520 }}>
-          {/* Logo Badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 40 }}>
-            <div style={{
-              width: 44,
-              height: 44,
-              background: 'rgba(255, 255, 255, 0.15)',
-              border: '1px solid rgba(255, 255, 255, 0.25)',
-              borderRadius: 12,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backdropFilter: 'blur(8px)',
-            }}>
-              <Zap size={22} color="#ffffff" fill="#ffffff" />
-            </div>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px', color: '#ffffff', lineHeight: 1.2 }}>HiveRift</div>
-              <div style={{ fontSize: 13, color: 'rgba(255, 255, 255, 0.7)', fontWeight: 500 }}>CRM Platform</div>
-            </div>
+          {/* Logo */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 32 }}>
+            <img
+              src="/logo.png"
+              alt="HiveRift"
+              style={{
+                height: 72,
+                width: 'auto',
+                maxWidth: 280,
+                objectFit: 'contain',
+                display: 'block',
+                filter: 'drop-shadow(0 6px 20px rgba(0, 0, 0, 0.3))',
+              }}
+            />
           </div>
 
           {/* Main Headline */}
@@ -131,7 +108,8 @@ export default function LoginPage() {
             letterSpacing: '-1px',
             color: '#ffffff',
           }}>
-            Manage your business,<br />the smart way.
+            Manage your business,
+            <span style={{ display: 'block', color: '#34d399' }}>the smart way.</span>
           </h1>
 
           {/* Subtitle */}
@@ -139,20 +117,20 @@ export default function LoginPage() {
             fontSize: 16,
             lineHeight: 1.6,
             color: 'rgba(255, 255, 255, 0.8)',
-            margin: '0 0 40px 0',
-            maxWidth: 460,
+            marginBottom: 36,
+            fontWeight: 400,
           }}>
             From lead to renewal — track every step of your business cycle in one powerful platform.
           </p>
 
-          {/* Feature Bullets */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Key Capabilities Pills */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
               { title: 'Complete Lead Lifecycle', desc: 'Track leads from inquiry to deal won' },
               { title: 'Project Management', desc: 'Assign, track, and deliver projects' },
               { title: 'Smart Renewals', desc: 'Never miss a service renewal' },
-            ].map((f) => (
-              <div key={f.title} style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            ].map((f, idx) => (
+              <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{
                   width: 26,
                   height: 26,
@@ -195,13 +173,15 @@ export default function LoginPage() {
               color: '#0f172a',
               margin: '0 0 6px 0',
               letterSpacing: '-0.5px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
             }}>
-              Welcome back 👋
+              Welcome back
             </h2>
-            <p style={{ fontSize: 14, color: '#64748b', margin: 0, fontWeight: 400 }}>
+            <p style={{
+              fontSize: 14,
+              color: '#64748b',
+              margin: 0,
+              fontWeight: 500,
+            }}>
               Sign in to your HiveRift account
             </p>
           </div>
@@ -339,71 +319,8 @@ export default function LoginPage() {
             textAlign: 'center',
           }}>
             <p style={{ margin: 0, fontSize: 12, color: '#64748b', fontWeight: 500 }}>
-              🔒 Secured with JWT Authentication &nbsp;|&nbsp; Role-based Access Control
+              Secured with JWT Authentication &nbsp;|&nbsp; Role-based Access Control
             </p>
-          </div>
-
-          {/* Quick Demo Login Auto-Filler */}
-          <div style={{ marginTop: 16 }}>
-            <button
-              type="button"
-              onClick={() => setShowDemoChips(!showDemoChips)}
-              style={{
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                fontSize: 12,
-                color: '#016139',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                padding: '4px 0',
-              }}
-            >
-              <UserCheck size={14} />
-              {showDemoChips ? 'Hide Quick Demo Roles' : '⚡ Quick Demo 1-Click Autofill'}
-            </button>
-
-            {showDemoChips && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 6,
-                marginTop: 10,
-                padding: 10,
-                background: '#e8f5f0',
-                borderRadius: 12,
-                border: '1px solid #bce6d2',
-              }}>
-                {DEMO_ROLES.map((r) => (
-                  <button
-                    key={r.role}
-                    type="button"
-                    onClick={() => fillDemoUser(r)}
-                    style={{
-                      background: selectedRole === r.role ? '#016139' : '#ffffff',
-                      color: selectedRole === r.role ? '#ffffff' : '#016139',
-                      border: '1px solid #bce6d2',
-                      borderRadius: 8,
-                      padding: '8px 4px',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 4,
-                      transition: 'all 0.15s',
-                    }}
-                  >
-                    <span>{r.badge}</span> {r.role}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       </div>

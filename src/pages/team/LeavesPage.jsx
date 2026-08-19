@@ -79,7 +79,7 @@ export default function LeavesPage() {
       await leavesAPI.apply(payload);
       await Swal.fire({
         icon: 'success',
-        title: 'Leave Application Submitted! 📅',
+        title: 'Leave Application Submitted!',
         text: isManagerOrHR
           ? 'Your request has been routed directly to Super Admin (Vineet) for approval.'
           : 'Your leave request has been submitted for management review.',
@@ -113,7 +113,7 @@ export default function LeavesPage() {
     if (confirm.isConfirmed) {
       try {
         await leavesAPI.approve(id);
-        Swal.fire({ icon: 'success', title: 'Leave Approved! ✅', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Leave Approved!', timer: 1200, showConfirmButton: false });
         fetchLeaves();
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Action Prohibited', text: err.response?.data?.message || 'Error approving leave' });
@@ -404,7 +404,7 @@ export default function LeavesPage() {
                             fontWeight: 600,
                             fontSize: 12,
                           }}>
-                            ⏳ Pending with {l.requestedTo?.name || 'Management'}
+                            Pending with {l.requestedTo?.name || 'Management'}
                           </span>
                         )}
                       </td>
@@ -448,7 +448,7 @@ export default function LeavesPage() {
                       gap: 8,
                     }}>
                       <ShieldCheck size={16} />
-                      <span>👑 Super Admin (Vineet)</span>
+                      <span>Super Admin (Vineet)</span>
                       <span style={{ fontSize: 11, color: '#475569', fontWeight: 400, marginLeft: 'auto' }}>
                         (Manager & HR leaves route exclusively to Super Admin)
                       </span>
@@ -459,7 +459,7 @@ export default function LeavesPage() {
                       value={formData.requestedTo}
                       onChange={e => setFormData({ ...formData, requestedTo: e.target.value })}
                     >
-                      <option value="all">👑 All Management & HR (Super Admin + HR + General Manager)</option>
+                      <option value="all">All Management & HR (Super Admin + HR + General Manager)</option>
                       {approvers.map(a => (
                         <option key={a._id} value={a._id}>
                           {a.name} ({a.designation || a.role.toUpperCase()})

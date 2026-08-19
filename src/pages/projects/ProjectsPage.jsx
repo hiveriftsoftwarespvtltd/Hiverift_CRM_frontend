@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { projectsAPI, clientsAPI, usersAPI } from '../../api';
-import { Plus, Search, FolderKanban, Calendar, User, Eye, CheckSquare, Trash2 } from 'lucide-react';
+import { Plus, Search, FolderKanban, Calendar, User, Eye, CheckSquare, Trash2, UploadCloud, Paperclip, FileText, X, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
@@ -19,7 +19,7 @@ export default function ProjectsPage() {
   const [techUsers, setTechUsers] = useState([]);
 
   const [formData, setFormData] = useState({
-    name: '', client: '', department: 'development', service: 'Web Development', assignedTo: '', startDate: new Date().toISOString().split('T')[0], deadline: '', value: '', requirements: ''
+    name: '', client: '', department: 'development', service: 'Web Development', assignedTo: '', startDate: new Date().toISOString().split('T')[0], deadline: '', requirements: '', attachments: []
   });
 
   useEffect(() => {
@@ -50,8 +50,48 @@ export default function ProjectsPage() {
         usersAPI.getAll({ limit: 100 }),
       ]);
       setClients(cRes.data.data.clients || []);
-      setTechUsers(uRes.data.data.users || []);
+      const allUsers = uRes.data.data.users || [];
+      const filteredTechUsers = allUsers.filter(u =>
+        ['development', 'digital_marketing'].includes(u.role) ||
+        ['development', 'digital_marketing'].includes(u.department)
+      );
+      setTechUsers(filteredTechUsers.length > 0 ? filteredTechUsers : allUsers);
     } catch {}
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    files.forEach(file => {
+      if (file.size > 15 * 1024 * 1024) {
+        Swal.fire({ icon: 'warning', title: 'File too large', text: `${file.name} exceeds 15MB limit.` });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const fileObj = {
+          name: file.name,
+          url: uploadEvent.target.result,
+          fileType: file.type || 'application/pdf',
+          size: file.size,
+          uploadedAt: new Date(),
+        };
+        setFormData(prev => ({
+          ...prev,
+          attachments: [...(prev.attachments || []), fileObj]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: (prev.attachments || []).filter((_, idx) => idx !== index)
+    }));
   };
 
   const handleCreateProject = async (e) => {
@@ -61,10 +101,12 @@ export default function ProjectsPage() {
       Object.keys(payload).forEach(k => {
         if (payload[k] === '' || payload[k] === null || payload[k] === undefined) delete payload[k];
       });
-      if (formData.value) payload.value = Number(formData.value);
       await projectsAPI.create(payload);
-      Swal.fire({ icon: 'success', title: 'Project Assigned!', text: 'Project created and notification sent', timer: 1500, showConfirmButton: false });
+      Swal.fire({ icon: 'success', title: 'Project Assigned!', text: 'Project created and assigned to tech team successfully', timer: 1500, showConfirmButton: false });
       setShowModal(false);
+      setFormData({
+        name: '', client: '', department: 'development', service: 'Web Development', assignedTo: '', startDate: new Date().toISOString().split('T')[0], deadline: '', requirements: '', attachments: []
+      });
       fetchProjects();
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to create project' });
@@ -75,28 +117,41 @@ export default function ProjectsPage() {
     e.stopPropagation();
     const res = await Swal.fire({
       title: 'Delete Project?',
-      text: `Delete project "${name}"?`,
+      text: `Are you sure you want to delete "${name}"?`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#EF4444',
+      confirmButtonText: 'Yes, Delete',
     });
     if (res.isConfirmed) {
       try {
         await projectsAPI.delete(id);
+        Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false });
         fetchProjects();
-      } catch {}
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed to delete' });
+      }
     }
   };
+
+  const filteredProjects = projects.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.projectId.toLowerCase().includes(search.toLowerCase()) ||
+      (p.client?.name && p.client.name.toLowerCase().includes(search.toLowerCase()));
+    const matchesDept = !deptFilter || p.department === deptFilter;
+    const matchesStatus = statusTab === 'all' || p.status === statusTab;
+    return matchesSearch && matchesDept && matchesStatus;
+  });
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Project Delivery</h1>
-          <p className="page-subtitle">Track development & digital marketing deliverables</p>
+          <h1 className="page-title">Technical Projects</h1>
+          <p className="page-subtitle">Assign, track deliverables, and manage Development & Marketing projects</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={16} /> New Project
+          <Plus size={16} /> Assign New Project
         </button>
       </div>
 
@@ -119,14 +174,14 @@ export default function ProjectsPage() {
           <Search />
           <input
             className="search-input"
-            placeholder="Search projects..."
+            placeholder="Search by project name, ID, client..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
         <select
           className="form-select"
-          style={{ width: 180, padding: '7px 12px' }}
+          style={{ maxWidth: 200 }}
           value={deptFilter}
           onChange={e => setDeptFilter(e.target.value)}
         >
@@ -140,7 +195,7 @@ export default function ProjectsPage() {
       <div className="table-wrapper" style={{ borderRadius: '0 0 12px 12px' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto' }} /></div>
-        ) : projects.length === 0 ? (
+        ) : filteredProjects.length === 0 ? (
           <div className="empty-state">
             <FolderKanban />
             <h3>No Projects Found</h3>
@@ -162,7 +217,7 @@ export default function ProjectsPage() {
               </tr>
             </thead>
             <tbody>
-              {projects.map(p => (
+              {filteredProjects.map(p => (
                 <tr key={p._id} onClick={() => navigate(`/projects/${p._id}`)}>
                   <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.projectId}</td>
                   <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{p.name}</td>
@@ -202,7 +257,6 @@ export default function ProjectsPage() {
         )}
       </div>
 
-      {/* Create Modal */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal modal-lg">
@@ -241,12 +295,16 @@ export default function ProjectsPage() {
                     <label className="form-label">Assign Employee</label>
                     <select className="form-select" value={formData.assignedTo} onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}>
                       <option value="">Select Developer / Marketer</option>
-                      {techUsers.map(u => <option key={u._id} value={u._id}>{u.name} ({u.role})</option>)}
+                      {techUsers.map(u => (
+                        <option key={u._id} value={u._id}>
+                          {u.name} ({u.role === 'development' ? 'Developer' : u.role === 'digital_marketing' ? 'Digital Marketer' : u.role?.toUpperCase()})
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
 
-                <div className="grid-3">
+                <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label required">Start Date</label>
                     <input type="date" className="form-input" required value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} />
@@ -255,15 +313,105 @@ export default function ProjectsPage() {
                     <label className="form-label required">Deadline</label>
                     <input type="date" className="form-input" required value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Project Value (₹)</label>
-                    <input type="number" className="form-input" placeholder="150000" value={formData.value} onChange={e => setFormData({ ...formData, value: e.target.value })} />
-                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Technical Requirements</label>
-                  <textarea className="form-textarea" placeholder="Tech stack, features, API requirements..." value={formData.requirements} onChange={e => setFormData({ ...formData, requirements: e.target.value })} />
+                  <label className="form-label">Technical Requirements & Scope</label>
+                  <textarea className="form-textarea" placeholder="Tech stack, features, API requirements, credentials..." value={formData.requirements} onChange={e => setFormData({ ...formData, requirements: e.target.value })} />
+                </div>
+
+                {/* File / PDF / Document Upload */}
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <Paperclip size={15} style={{ color: 'var(--primary)' }} />
+                      Attach PDF / Documents / Wireframes
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Max 15MB each</span>
+                  </label>
+
+                  <div style={{
+                    border: '2px dashed var(--border)',
+                    borderRadius: 8,
+                    padding: '14px',
+                    textAlign: 'center',
+                    background: 'var(--bg-secondary)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    transition: 'border-color 0.2s'
+                  }}>
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.zip,.csv,.xlsx"
+                      onChange={handleFileUpload}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer'
+                      }}
+                    />
+                    <UploadCloud size={24} style={{ color: 'var(--primary)', marginBottom: 4 }} />
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-heading)' }}>
+                      Click or drag files here to attach PDF or Documents
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      Supports: PDF, DOC, DOCX, TXT, Images, ZIP, Excel
+                    </div>
+                  </div>
+
+                  {/* Attached Files List */}
+                  {formData.attachments && formData.attachments.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 10 }}>
+                      {formData.attachments.map((att, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            background: 'var(--bg-main)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 6
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflow: 'hidden' }}>
+                            <div style={{
+                              padding: '4px 8px',
+                              borderRadius: 4,
+                              background: att.name?.toLowerCase().endsWith('.pdf') ? '#FEE2E2' : '#E0F2FE',
+                              color: att.name?.toLowerCase().endsWith('.pdf') ? '#DC2626' : '#0284C7',
+                              fontWeight: 700,
+                              fontSize: 11
+                            }}>
+                              {att.name?.toLowerCase().endsWith('.pdf') ? 'PDF' : att.name?.split('.').pop()?.toUpperCase() || 'FILE'}
+                            </div>
+                            <div style={{ overflow: 'hidden' }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-heading)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: 280 }}>
+                                {att.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                {(att.size / 1024).toFixed(1)} KB
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(idx)}
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--red)', padding: '4px 6px' }}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">

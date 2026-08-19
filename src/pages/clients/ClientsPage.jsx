@@ -1,23 +1,36 @@
 import { useState, useEffect } from 'react';
-import { clientsAPI } from '../../api';
-import { UserCheck, Search, Plus, Eye, Phone, Mail, Building, Trash2, FolderKanban, FileText, CreditCard, ShieldCheck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { clientsAPI, leadsAPI } from '../../api';
+import { UserCheck, Search, Plus, Eye, Edit3, Phone, Mail, Building, Trash2, FolderKanban, FileText, CreditCard, ShieldCheck, Sparkles, CheckCircle, Info } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [clients, setClients] = useState([]);
+  const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingClient, setEditingClient] = useState(null);
+  const [selectedLeadId, setSelectedLeadId] = useState('');
 
   const [formData, setFormData] = useState({
-    name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: ''
+    name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '', leadRef: ''
   });
 
   useEffect(() => {
     fetchClients();
+    fetchLeads();
   }, [search]);
+
+  useEffect(() => {
+    const leadIdParam = searchParams.get('leadId');
+    if (leadIdParam && leads.length > 0) {
+      handleSelectLeadForAutofill(leadIdParam);
+      setShowModal(true);
+    }
+  }, [searchParams, leads]);
 
   const fetchClients = async () => {
     setLoading(true);
@@ -31,26 +44,98 @@ export default function ClientsPage() {
     }
   };
 
-  const handleCreateClient = async (e) => {
+  const fetchLeads = async () => {
+    try {
+      const { data } = await leadsAPI.getAll({ limit: 100 });
+      setLeads(data.data.leads || []);
+    } catch (err) {
+      console.error('Error fetching leads for client autofill:', err);
+    }
+  };
+
+  const handleOpenNew = () => {
+    setEditingClient(null);
+    setSelectedLeadId('');
+    setFormData({ name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '', leadRef: '' });
+    setShowModal(true);
+  };
+
+  const handleOpenEdit = (c, e) => {
+    if (e) e.stopPropagation();
+    setEditingClient(c);
+    setSelectedLeadId('');
+    setFormData({
+      name: c.name || '',
+      company: c.company || '',
+      phone: c.phone || '',
+      whatsapp: c.whatsapp || c.phone || '',
+      email: c.email || '',
+      city: c.city || '',
+      address: c.address || '',
+      gstin: c.gstin || '',
+      notes: c.notes || '',
+      leadRef: c.leadRef?._id || c.leadRef || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSelectLeadForAutofill = (leadId) => {
+    setSelectedLeadId(leadId);
+    if (!leadId) {
+      return;
+    }
+    const lead = leads.find(l => l._id === leadId);
+    if (lead) {
+      setFormData(prev => ({
+        ...prev,
+        name: lead.name || '',
+        company: lead.company || lead.name || '',
+        phone: lead.phone || '',
+        whatsapp: lead.whatsapp || lead.phone || '',
+        email: lead.email || '',
+        city: lead.city || '',
+        address: lead.address || '',
+        leadRef: lead._id,
+        notes: lead.requirement ? `Requirement: ${lead.requirement}` : prev.notes || ''
+      }));
+    }
+  };
+
+  const handleSaveClient = async (e) => {
     e.preventDefault();
     try {
       const payload = { ...formData };
       Object.keys(payload).forEach(k => {
         if (payload[k] === '' || payload[k] === null || payload[k] === undefined) delete payload[k];
       });
-      await clientsAPI.create(payload);
-      Swal.fire({
-        icon: 'success',
-        title: 'Client Profile Created! 🏢',
-        text: 'Client is now active in your portfolio.',
-        timer: 1500,
-        showConfirmButton: false
-      });
+
+      if (editingClient) {
+        await clientsAPI.update(editingClient._id, payload);
+        Swal.fire({
+          icon: 'success',
+          title: 'Client Profile Updated!',
+          text: `Details updated for ${formData.name || 'Client'}.`,
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } else {
+        await clientsAPI.create(payload);
+        Swal.fire({
+          icon: 'success',
+          title: 'Client Profile Created!',
+          text: 'Client is now active in your portfolio.',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
+
       setShowModal(false);
-      setFormData({ name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '' });
+      setEditingClient(null);
+      setSelectedLeadId('');
+      setFormData({ name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '', leadRef: '' });
       fetchClients();
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Error creating client profile' });
+      Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Error saving client profile' });
     }
   };
 
@@ -83,7 +168,7 @@ export default function ClientsPage() {
           <h1 className="page-title">Client Portfolio</h1>
           <p className="page-subtitle">360° overview of converted business accounts, deliverables, and service contracts</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={handleOpenNew}>
           <Plus size={16} /> Add New Client
         </button>
       </div>
@@ -176,15 +261,15 @@ export default function ClientsPage() {
                   <td>
                     <div style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>{c.name}</div>
                     <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                      🏢 {c.company || 'Individual Client'}
+                      <Building size={12} /> {c.company || 'Individual Client'}
                     </div>
                   </td>
                   <td>
                     <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                      📞 {c.phone}
+                      <Phone size={12} /> {c.phone}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      ✉️ {c.email || 'No email provided'}
+                      <Mail size={12} /> {c.email || 'No email provided'}
                     </div>
                   </td>
                   <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
@@ -199,11 +284,11 @@ export default function ClientsPage() {
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
                       <button
                         className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                        style={{ padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                         onClick={() => navigate(`/clients/${c._id}`)}
-                        title="View 360° Account"
+                        title="360° View Account"
                       >
-                        <Eye size={13} /> 360° View
+                        <Eye size={14} />
                       </button>
                       <button
                         className="btn btn-secondary btn-sm"
@@ -230,15 +315,15 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal for Create Client Profile */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal modal-lg">
             <div className="modal-header">
               <h3 className="modal-title">Create Client Profile</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <button className="modal-close" onClick={() => { setShowModal(false); setSelectedLeadId(''); }}>×</button>
             </div>
-            <form onSubmit={handleCreateClient}>
+            <form onSubmit={handleSaveClient}>
               <div className="modal-body">
                 <div className="grid-2">
                   <div className="form-group">
@@ -246,6 +331,7 @@ export default function ClientsPage() {
                     <input
                       className="form-input"
                       required
+                      placeholder="e.g. Rahul Sharma"
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
                     />
@@ -254,6 +340,7 @@ export default function ClientsPage() {
                     <label className="form-label">Company / Entity Name</label>
                     <input
                       className="form-input"
+                      placeholder="e.g. Acme Corp Pvt Ltd"
                       value={formData.company}
                       onChange={e => setFormData({ ...formData, company: e.target.value })}
                     />
@@ -266,6 +353,7 @@ export default function ClientsPage() {
                     <input
                       className="form-input"
                       required
+                      placeholder="+91 98765 43210"
                       value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     />
@@ -275,6 +363,7 @@ export default function ClientsPage() {
                     <input
                       className="form-input"
                       type="email"
+                      placeholder="client@company.com"
                       value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
                     />
@@ -286,6 +375,7 @@ export default function ClientsPage() {
                     <label className="form-label">City / Region</label>
                     <input
                       className="form-input"
+                      placeholder="e.g. New Delhi"
                       value={formData.city}
                       onChange={e => setFormData({ ...formData, city: e.target.value })}
                     />
@@ -294,6 +384,7 @@ export default function ClientsPage() {
                     <label className="form-label">GSTIN / Tax ID</label>
                     <input
                       className="form-input"
+                      placeholder="e.g. 07AAAAA0000A1Z5"
                       value={formData.gstin}
                       onChange={e => setFormData({ ...formData, gstin: e.target.value })}
                     />
@@ -305,6 +396,7 @@ export default function ClientsPage() {
                   <textarea
                     className="form-textarea"
                     rows="2"
+                    placeholder="Enter full billing address, tax notes or project requirements..."
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   />
@@ -312,7 +404,7 @@ export default function ClientsPage() {
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setSelectedLeadId(''); }}>Cancel</button>
                 <button type="submit" className="btn btn-primary">Save Client Profile</button>
               </div>
             </form>
