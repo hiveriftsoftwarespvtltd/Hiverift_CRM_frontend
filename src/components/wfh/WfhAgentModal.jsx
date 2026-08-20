@@ -70,7 +70,7 @@ export default function WfhAgentModal({ isOpen, onClose, onConnected }) {
 
   const handleDownloadBatch = () => {
     if (!tokenData?.pairingToken) return;
-    const serverUrl = import.meta.env.VITE_API_BASE_URL || 'https://onboarding.hiverift.com/api/v1';
+    const serverUrl = import.meta.env.VITE_API_BASE_URL || 'https://onboarding.hiverift.com/onboarding_api/api/v1';
 
     const psCode = `$serverUrl = '${serverUrl}'
 $token = '${token}'
