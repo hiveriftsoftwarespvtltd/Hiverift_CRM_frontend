@@ -50,6 +50,9 @@ export const quotationsAPI = {
   create: (data) => api.post('/quotations', data),
   update: (id, data) => api.put(`/quotations/${id}`, data),
   updateStatus: (id, status) => api.put(`/quotations/${id}/status`, { status }),
+  requestApproval: (id) => api.post(`/quotations/${id}/request-approval`),
+  approve: (id) => api.post(`/quotations/${id}/approve`),
+  reject: (id, reason) => api.post(`/quotations/${id}/reject`, { reason }),
   sendEmail: (id) => api.post(`/quotations/${id}/send-email`),
   delete: (id) => api.delete(`/quotations/${id}`),
 };
@@ -181,4 +184,20 @@ export const invoicesAPI = {
   sendEmail: (id, data) => api.post(`/invoices/${id}/send-email`, data),
 };
 
+// WFH Employee Monitoring System
+export const monitoringAPI = {
+  generateToken: () => api.post('/monitoring/device/token'),
+  getDeviceStatus: () => api.get('/monitoring/device/status'),
+  getDashboardStats: () => api.get('/monitoring/dashboard'),
+  getLiveMonitoring: () => api.get('/monitoring/live'),
+  getEmployeeDetails: (id, date) => api.get(`/monitoring/employee/${id}/details`, { params: { date } }),
+  getApplicationSummary: (params) => api.get('/monitoring/applications/summary', { params }),
+  getDevices: () => api.get('/monitoring/devices'),
+  revokeDevice: (id) => api.delete(`/monitoring/devices/${id}`),
+  deleteDevicePermanently: (id) => api.delete(`/monitoring/devices/${id}/permanent`),
+  getReports: (params) => api.get('/monitoring/reports', { params }),
+  deleteReport: (id) => api.delete(`/monitoring/reports/${id}`),
+};
+
 export default api;
+

@@ -81,7 +81,7 @@ export default function LeavesPage() {
         icon: 'success',
         title: 'Leave Application Submitted!',
         text: isManagerOrHR
-          ? 'Your request has been routed directly to Super Admin (Vineet) for approval.'
+          ? 'Your request has been routed directly to Super Admin for approval.'
           : 'Your leave request has been submitted for management review.',
         timer: 1800,
         showConfirmButton: false
@@ -284,7 +284,7 @@ export default function LeavesPage() {
                         <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
                         <span>
                           {isManagementApplicant
-                            ? 'Super Admin (Vineet)'
+                            ? 'Super Admin'
                             : l.requestedTo?.name || 'All Management & HR'}
                         </span>
                       </div>
@@ -336,7 +336,7 @@ export default function LeavesPage() {
                               fontSize: 12,
                             }}>
                               <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
-                              <span>Approved by {l.approvedBy?.name || 'Vineet'}</span>
+                              <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
                             </span>
                           ) : (
                             <span style={{
@@ -352,7 +352,7 @@ export default function LeavesPage() {
                               fontSize: 12,
                             }}>
                               <X size={13} style={{ color: '#DC2626', strokeWidth: 2.5 }} />
-                              <span>Rejected by {l.approvedBy?.name || 'Vineet'}</span>
+                              <span>Rejected by {l.approvedBy?.name || 'Super Admin'}</span>
                             </span>
                           )
                         )}
@@ -373,7 +373,7 @@ export default function LeavesPage() {
                             fontSize: 12,
                           }}>
                             <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
-                            <span>Approved by {l.approvedBy?.name || 'Vineet'}</span>
+                            <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
                           </span>
                         ) : l.status === 'rejected' ? (
                           <span style={{
@@ -448,7 +448,7 @@ export default function LeavesPage() {
                       gap: 8,
                     }}>
                       <ShieldCheck size={16} />
-                      <span>Super Admin (Vineet)</span>
+                      <span>Super Admin</span>
                       <span style={{ fontSize: 11, color: '#475569', fontWeight: 400, marginLeft: 'auto' }}>
                         (Manager & HR leaves route exclusively to Super Admin)
                       </span>

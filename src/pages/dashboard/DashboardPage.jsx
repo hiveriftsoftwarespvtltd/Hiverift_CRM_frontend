@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { dashboardAPI, attendanceAPI, leavesAPI } from '../../api';
+import { dashboardAPI, attendanceAPI, leavesAPI, monitoringAPI } from '../../api';
+import WfhAgentModal from '../../components/wfh/WfhAgentModal';
 import {
   Users, CreditCard, FolderKanban, RefreshCw, TrendingUp, Clock, Plus,
   ArrowUpRight, ArrowDownRight, CheckCircle2, FileText, AlertTriangle, Calendar,
   Briefcase, CheckSquare, ListTodo, ShieldAlert, UserCheck, ChevronRight, PhoneCall, ExternalLink,
-  Award, XCircle, Coffee, Play, ChevronDown, Timer, Utensils, Droplets, GraduationCap, MessagesSquare, Trophy
+  Award, XCircle, Coffee, Play, ChevronDown, Timer, Utensils, Droplets, GraduationCap, MessagesSquare, Trophy, Laptop, Home
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import Swal from 'sweetalert2';
@@ -27,14 +28,21 @@ export default function DashboardPage() {
   const [myAttendance, setMyAttendance] = useState(null);
   const [checkingIn, setCheckingIn] = useState(false);
   const [breakMenuOpen, setBreakMenuOpen] = useState(false);
+  const [checkInMenuOpen, setCheckInMenuOpen] = useState(false);
   const [breakTimerSeconds, setBreakTimerSeconds] = useState(0);
+  const [isWfhModalOpen, setIsWfhModalOpen] = useState(false);
+  const [wfhAgentConnected, setWfhAgentConnected] = useState(false);
   const breakMenuRef = useRef(null);
+  const checkInMenuRef = useRef(null);
 
-  // Close break dropdown on outside click
+  // Close break & checkin dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (breakMenuRef.current && !breakMenuRef.current.contains(e.target)) {
         setBreakMenuOpen(false);
+      }
+      if (checkInMenuRef.current && !checkInMenuRef.current.contains(e.target)) {
+        setCheckInMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -63,7 +71,15 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboard();
     fetchAttendance();
+    checkWfhStatus();
   }, [user]);
+
+  const checkWfhStatus = async () => {
+    try {
+      const res = await monitoringAPI.getDeviceStatus();
+      setWfhAgentConnected(res.data?.data?.isConnected);
+    } catch {}
+  };
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -93,15 +109,29 @@ export default function DashboardPage() {
     } catch { }
   };
 
-  const handleCheckIn = async () => {
+  const handleCheckIn = async (mode = 'office') => {
     setCheckingIn(true);
+    setCheckInMenuOpen(false);
     try {
-      await attendanceAPI.checkIn({ notes: 'Web Dashboard Check-in' });
+      const isWfh = mode === 'wfh';
+      await attendanceAPI.checkIn({ notes: isWfh ? 'WFH Check-in' : 'Office Check-in' });
+      
+      if (isWfh) {
+        const devRes = await monitoringAPI.getDeviceStatus();
+        const connected = devRes.data?.data?.isConnected;
+        setWfhAgentConnected(connected);
+        if (!connected) {
+          setIsWfhModalOpen(true);
+        }
+      }
+
       Swal.fire({
         icon: 'success',
-        title: 'Checked In Successfully!',
-        text: 'Your attendance has been recorded for today.',
-        timer: 1800,
+        title: isWfh ? 'WFH Shift Started!' : 'Checked In Successfully!',
+        text: isWfh
+          ? 'Your Work From Home attendance and activity are now recording.'
+          : 'Your office attendance has been recorded for today.',
+        timer: 2000,
         showConfirmButton: false
       });
       fetchAttendance();
@@ -269,11 +299,64 @@ export default function DashboardPage() {
           {/* Quick Check-in/Out & Break Tracking for Employees / Staff */}
           {!isAdmin && (
             !myAttendance ? (
-              <button className="btn btn-primary" onClick={handleCheckIn} disabled={checkingIn}>
-                <Clock size={16} /> Mark Check-in (10:00 AM – 7:00 PM)
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => handleCheckIn('office')}
+                  disabled={checkingIn}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700 }}
+                >
+                  <Clock size={16} /> Office Check-in
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => handleCheckIn('wfh')}
+                  disabled={checkingIn}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: '1.5px solid #016139',
+                    color: '#016139',
+                    fontWeight: 700,
+                    background: '#f0fdf4'
+                  }}
+                >
+                  <Home size={15} color="#016139" /> WFH Check-in
+                </button>
+              </div>
             ) : !myAttendance.checkOut ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {/* WFH Active Monitoring Status Badge */}
+                {(myAttendance.notes?.includes('WFH') || myAttendance.status === 'wfh') && (
+                  <div
+                    onClick={() => !wfhAgentConnected && setIsWfhModalOpen(true)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      background: wfhAgentConnected ? '#dcfce7' : '#fffbeb',
+                      color: wfhAgentConnected ? '#15803d' : '#b45309',
+                      border: `1px solid ${wfhAgentConnected ? '#86efac' : '#fde68a'}`,
+                      fontSize: 12,
+                      fontWeight: 800,
+                      cursor: wfhAgentConnected ? 'default' : 'pointer'
+                    }}
+                    title={wfhAgentConnected ? 'HiveRift Monitoring Agent Connected & Active' : 'Click to pair WFH Agent'}
+                  >
+                    <Laptop size={14} />
+                    <span>{wfhAgentConnected ? 'WFH Agent Active' : 'WFH Agent Required'}</span>
+                    <span style={{
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      background: wfhAgentConnected ? '#16a34a' : '#f59e0b',
+                      display: 'inline-block'
+                    }} />
+                  </div>
+                )}
                 {/* Active Break or Break Dropdown */}
                 {myAttendance.activeBreak ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -531,7 +614,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Charts Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 24 }}>
+          <div className="dashboard-charts-grid">
             {/* Sales Collection Trend */}
             <div className="card">
               <div className="card-header">
@@ -960,7 +1043,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Charts Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20, marginBottom: 24 }}>
+          <div className="dashboard-charts-grid">
             {/* Sales Collection Trend */}
             <div className="card">
               <div className="card-header">
@@ -1170,6 +1253,13 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {/* WFH Monitoring Agent Installer Modal */}
+      <WfhAgentModal
+        isOpen={isWfhModalOpen}
+        onClose={() => setIsWfhModalOpen(false)}
+        onConnected={() => setWfhAgentConnected(true)}
+      />
     </div>
   );
 }

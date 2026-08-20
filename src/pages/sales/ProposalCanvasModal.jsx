@@ -1,57 +1,404 @@
 import { useState, useEffect } from 'react';
 import {
-  FileText, Printer, Send, Edit3, Eye, Trash2, Plus, X, Building, User, Mail, Phone, Calendar, Check, Save, Sparkles
+  FileText, Printer, Send, Edit3, Eye, Trash2, Plus, X, Building, User, Mail, Phone, Calendar, Check, Save, Sparkles, Globe, Megaphone, CheckCircle, XCircle, Clock
 } from 'lucide-react';
 import { quotationsAPI } from '../../api';
 import Swal from 'sweetalert2';
 
-export const TEMPLATE_OPTIONS = [
+export const PROPOSAL_CATEGORIES = [
   {
-    id: 'sales_standard',
-    title: 'IT & Custom Software Proposal',
-    headerTitle: 'CUSTOM SOFTWARE DEVELOPMENT & IT SOLUTIONS PROPOSAL',
-    subTitle: 'Enterprise Web, Mobile & Software Engineering Solutions',
+    id: 'website_dev',
+    title: '1. Website & Development',
+    icon: '🌐',
+    subtitle: 'Custom Web Apps, E-Commerce Stores, IT Software & Landing Pages',
+    color: '#016139',
+    bgColor: '#E8F5F0',
+    templates: [
+      'custom_web_app',
+      'ecommerce_website',
+      'it_software_dev',
+      'landing_page',
+      'portfolio_website',
+    ]
+  },
+  {
+    id: 'social_ads',
+    title: '2. Social Media & Advertisement',
+    icon: '📣',
+    subtitle: 'Meta Ads, Google Ads, Multi-Platform Advertising & Local SEO Lead Gen',
+    color: '#2563EB',
+    bgColor: '#EAF3FF',
+    templates: [
+      'facebook_instagram_ads',
+      'google_ads',
+      'multi_platform_ads',
+      'seo_local_lead_gen',
+      'seo_growth_marketing',
+    ]
+  }
+];
+
+export const TEMPLATE_OPTIONS = [
+  // CATEGORY 1: WEBSITE & DEVELOPMENT
+  {
+    id: 'custom_web_app',
+    category: 'website_dev',
+    title: 'Custom Web Application Website Proposal',
+    headerTitle: 'CUSTOM WEB APPLICATION WEBSITE PROPOSAL',
+    subTitle: 'Custom Business Software, Workflows & Digital Solutions',
+    headline: 'Custom Functionality • User Roles • Admin Panel • Automation',
     defaultServices: [
       {
-        name: 'Custom Web & CRM Software Solution',
-        description: 'Fullstack React, Node.js, MongoDB Application with RBAC & API integrations',
+        name: 'Custom Web Application Design & Development',
+        description: 'Custom Business Modules, Workflow Automation, Multi-role RBAC & Admin Panel',
         quantity: 1,
         rate: 45000,
         amount: 45000
-      }
-    ],
-    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. is pleased to present this comprehensive technical proposal to Valued Client. Our enterprise software engineering approach blends modular architecture, modern frontend/backend performance, enterprise database reliability, and responsive design to deliver scalable digital infrastructure tailored to your business operations.',
-    defaultNotes: '1. Standard payment schedule: 50% advance upon contract signing, 30% after beta milestone, 20% on final deployment.\n2. Quotation is valid for 15 days from issue date.\n3. Complimentary 30 days bug-fixing & technical support included.',
-    defaultTerms: '1. Warranty & Bug Fixing: 30 days of complimentary technical warranty post-deployment to address any bugs or defects.\n2. Intellectual Property: 100% intellectual property, proprietary assets, and custom source code transferred to client upon final payment settlement.\n3. Change Requests: Additional feature requirements outside the agreed scope will be estimated separately as a milestone addendum.\n4. Confidentiality: Strict Non-Disclosure Agreement (NDA) protects all proprietary business data, workflows, and user credentials.',
-    defaultQuote: '"Empowering Growing Businesses Through Cutting-Edge Enterprise Software Engineering"'
-  },
-  {
-    id: 'social_media',
-    title: 'Social Media & Meta Ads Proposal',
-    headerTitle: 'SOCIAL MEDIA MANAGEMENT + META ADS PROPOSAL',
-    subTitle: 'Social Media Management + Meta Ads Campaign & Digital Growth',
-    defaultServices: [
-      {
-        name: 'Social Media Management (15 Posts + 5 Reels/mo)',
-        description: 'Graphic Design, Video Editing, Captions, Hashtags & Community Management',
-        quantity: 1,
-        rate: 4000,
-        amount: 4000
       },
       {
-        name: 'Meta Ads Campaign Management',
-        description: 'Lead Generation, Brand Awareness, Retargeting, A/B Testing & Daily Optimization',
+        name: 'Hosting / Server – 1 Year',
+        description: 'High-speed cloud server, SSL certificate configuration, database backup & maintenance',
         quantity: 1,
-        rate: 2000,
-        amount: 2000
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Third-Party API & Gateway Integrations',
+        description: 'Payment gateway, WhatsApp API, Email/SMS notifications & Google analytics setup',
+        quantity: 1,
+        rate: 0,
+        amount: 0
       }
     ],
-    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. offers end-to-end digital growth and performance marketing designed to elevate brand authority and generate qualified business leads through hyper-targeted Meta advertising funnels, creative visual branding, and data-driven audience optimization.',
-    defaultNotes: '1. Monthly Management Fee is payable 100% in advance.\n2. Recommended minimum commitment of 3 months for measurable lead generation results.\n3. Ad spend / Meta budget is not included and will be billed separately as per client budget.\n4. Client will provide high-res logo, photos/videos and Meta Ad account access.',
-    defaultTerms: '1. Payment: Monthly management fee is payable 100% in advance.\n2. Minimum Commitment: Recommended 3 months commitment for measurable digital growth & audience optimization.\n3. Content Materials: Client to provide product/service photos, raw videos, and access to brand assets.\n4. Ad Spend: Meta ads budget is not included in the management fee and is managed per client\'s budget.\n5. Account Access: Client will provide manager access to Facebook Page, Instagram & Meta Ad Account.\n6. Dedicated Support: Transparent monthly reports and continuous strategy optimization.',
-    defaultQuote: '"Empowering Growing Businesses Through Targeted Digital & Social Growth"'
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. proposes to design and develop a custom web application built around the client\'s specific business processes, operational requirements and growth objectives. Unlike a standard website, the proposed web application includes custom business functionality, user roles, administrative controls, automated workflows, third-party integrations and scalable database architecture.',
+    defaultNotes: '1. 100% Advance Payment required before project initiation.\n2. Timeline: Estimated 15–30 Working Days based on approved scope.\n3. Complimentary 30 days post-deployment technical support & bug fixing included.',
+    defaultTerms: '1. Payment Terms: 100% Advance Payment required before project initiation.\n2. Scope Approval: Final modules, user roles, workflows and tech stack confirmed post requirement analysis.\n3. Intellectual Property: 100% source code and admin credentials handed over upon completion.\n4. Exclusions: Domain renewal, paid third-party API/gateway fees and ongoing monthly server costs beyond included package.',
+    defaultQuote: '"Build a secure and scalable web-based business solution that simplifies operations and centralizes workflows."'
+  },
+  {
+    id: 'ecommerce_website',
+    category: 'website_dev',
+    title: 'E-Commerce Website Proposal',
+    headerTitle: 'E-COMMERCE WEBSITE PROPOSAL',
+    subTitle: 'Complete Online Store & E-Commerce Solution',
+    headline: 'Online Store • Product Catalogue • Shopping Cart • Order Management',
+    defaultServices: [
+      {
+        name: 'E-Commerce Website Design & Development',
+        description: 'Product Catalogue, Shopping Cart, Wishlist, User Accounts & Responsive UI',
+        quantity: 1,
+        rate: 35000,
+        amount: 35000
+      },
+      {
+        name: 'Hosting – 1 Year',
+        description: 'Secure SSL, 1 Year Web Hosting & Server Setup',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Online Payment Gateway & Shipping Setup',
+        description: 'UPI, Credit/Debit Cards, NetBanking, Order Management & Invoice Generator',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. proposes to design and develop a professional, secure and responsive E-Commerce Website. The solution provides a complete online shopping platform where customers can discover products, view details, add to cart, place orders, pay online and receive automated order updates.',
+    defaultNotes: '1. Payment Terms: 30% Advance for project initiation, 70% Final Payment before final handover/go-live.\n2. Delivery Timeline: 10–20 Working Days.\n3. Includes 30 Days bug fixes & basic admin handover training.',
+    defaultTerms: '1. Payment Terms: 30% Advance to start, 70% before go-live.\n2. Catalogue Upload: Basic product upload included; bulk uploading available as add-on.\n3. Third-Party Gateway: Payment gateway account setup & transaction fees billed directly by payment provider.\n4. Support: 30 Days technical warranty post launch.',
+    defaultQuote: '"Build a scalable online store focused on product discovery, customer experience, secure transactions and online sales."'
+  },
+  {
+    id: 'it_software_dev',
+    category: 'website_dev',
+    title: 'IT & Software Website Proposal',
+    headerTitle: 'IT & SOFTWARE DEVELOPMENT PROPOSAL',
+    subTitle: 'IT Solutions, Software Development & Technology Services',
+    headline: 'Software Development • Web Applications • Mobile Apps • IT Solutions',
+    defaultServices: [
+      {
+        name: 'IT / Software Development & Web Application',
+        description: 'Custom Enterprise Software, Web App, Portal & Modular Business System',
+        quantity: 1,
+        rate: 50000,
+        amount: 50000
+      },
+      {
+        name: 'Hosting / Server – 1 Year',
+        description: 'High-availability server infrastructure, SSL & database configuration',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Third-Party API & System Integration',
+        description: 'CRM/ERP connectors, WhatsApp API, Payment Gateway & Custom Webhooks',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. provides professional IT & Software Development solutions for businesses requiring reliable technology systems, custom software, web applications, mobile applications and digital platforms tailored to business objectives, user roles, integrations and future scalability.',
+    defaultNotes: '1. 100% Advance Payment required before project initiation.\n2. Timeline: Determined after technical scope approval.\n3. Includes Admin Handover, SSL & Technical Support as per package.',
+    defaultTerms: '1. Payment Terms: 100% Advance Payment before project initiation.\n2. Deliverables: Full admin panel, database architecture, user credentials and source code handover.\n3. Maintenance: Post-launch bug fixing & maintenance included as per contract agreement.',
+    defaultQuote: '"Deliver a reliable, secure and scalable technology solution that supports business operations and digital growth."'
+  },
+  {
+    id: 'landing_page',
+    category: 'website_dev',
+    title: 'Landing Page Website Proposal',
+    headerTitle: 'LANDING PAGE WEBSITE PROPOSAL',
+    subTitle: 'High-Converting Sales & Lead Generation Landing Page',
+    headline: 'Lead Generation • High Conversion • Mobile Responsive • Fast Loading',
+    defaultServices: [
+      {
+        name: 'High-Converting Landing Page Design & Development',
+        description: 'Single-Page Conversion Funnel, Hero Section, CTA, Reviews & Lead Capture Form',
+        quantity: 1,
+        rate: 15000,
+        amount: 15000
+      },
+      {
+        name: 'Hosting & SSL – 1 Year',
+        description: 'Fast cloud hosting, SSL security & speed optimization',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Lead Capture Form & WhatsApp API Integration',
+        description: 'Direct email notifications, WhatsApp instant chat & Meta Pixel/GTM tracking',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. proposes to build a high-speed, high-converting Landing Page specifically engineered to capture lead data, boost ad conversion rates, and showcase key products/services with maximum impact.',
+    defaultNotes: '1. Payment: 50% Advance, 50% on Completion.\n2. Timeline: 5–7 Working Days.\n3. Complimentary 30 Days support & form testing.',
+    defaultTerms: '1. Payment Schedule: 50% Advance to start, 50% on live handover.\n2. Content: Client to provide text content & logos (copywriting available as add-on).\n3. Integrations: WhatsApp click-to-chat & lead form email alerts included.',
+    defaultQuote: '"Maximize ad campaign conversions with ultra-fast, mobile-optimized lead generation landing pages."'
+  },
+  {
+    id: 'portfolio_website',
+    category: 'website_dev',
+    title: 'Portfolio Website Proposal',
+    headerTitle: 'PORTFOLIO WEBSITE PROPOSAL',
+    subTitle: 'Personal, Professional & Corporate Portfolio Website',
+    headline: 'Brand Showcase • Work Portfolio • Responsive Design • Lead Capture',
+    defaultServices: [
+      {
+        name: 'Professional Portfolio Website Design & Development',
+        description: 'Dynamic Project Showcase, Gallery, About Section, Client Testimonials & Contact Form',
+        quantity: 1,
+        rate: 18000,
+        amount: 18000
+      },
+      {
+        name: 'Hosting & SSL – 1 Year',
+        description: '1 Year premium web hosting, SSL certificate & custom domain setup support',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Dynamic Project Showcase & Contact Integration',
+        description: 'Interactive work filter, case study popups & WhatsApp / Email lead capture',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. proposes to design a stunning, modern Portfolio Website for showcasing individual or company projects, client testimonials, services, and creative achievements to win new clients and establish elite brand authority.',
+    defaultNotes: '1. Payment: 50% Advance, 50% on Handover.\n2. Timeline: 7–10 Working Days.\n3. Includes 30 Days post-launch support.',
+    defaultTerms: '1. Payment Terms: 50% Advance, 50% before final handover.\n2. Asset Submission: Client to provide project images & text details.\n3. Mobile Responsive: 100% fluid design across mobiles, tablets & laptops.',
+    defaultQuote: '"Showcase your work, build trust, and turn visitors into high-paying clients with a premium portfolio."'
+  },
+
+  // CATEGORY 2: SOCIAL MEDIA & ADVERTISEMENT
+  {
+    id: 'facebook_instagram_ads',
+    category: 'social_ads',
+    title: 'Facebook & Instagram Ads Proposal',
+    headerTitle: 'FACEBOOK & INSTAGRAM ADS PROPOSAL',
+    subTitle: 'Meta Advertising, Lead Generation & Brand Awareness Campaigns',
+    headline: 'Meta Ads • Targeted Campaigns • Lead Generation • Creative Ad Strategy',
+    defaultServices: [
+      {
+        name: 'Facebook & Instagram Ads Management (Monthly)',
+        description: 'Audience Research, Campaign Setup, Daily Optimization & Budget Allocation',
+        quantity: 1,
+        rate: 12000,
+        amount: 12000
+      },
+      {
+        name: 'Creative Ad Copies, Banners & Reels Design',
+        description: 'High-converting ad copy, visual design, promo banners & reel ad creatives',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Meta Pixel, Lead Forms & Conversion Tracking',
+        description: 'Custom lead forms, retargeting audience setup & Meta Pixel integration',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. offers end-to-end performance marketing on Facebook & Instagram designed to build brand authority and generate qualified business leads through hyper-targeted ad funnels, A/B testing, and data-driven audience optimization.',
+    defaultNotes: '1. Monthly Management Fee is payable 100% in advance.\n2. Meta Ad spend budget is separate and billed directly to client\'s Meta Ad Account.\n3. Recommended minimum commitment of 3 months for optimal ROI.',
+    defaultTerms: '1. Payment: Monthly retainer fee payable 100% in advance.\n2. Ad Budget: Meta ad spend budget is paid directly by client to Meta.\n3. Access: Client will grant partner access to Facebook Page, Instagram & Meta Ad Manager.\n4. Reporting: Transparent monthly analytics & performance summaries.',
+    defaultQuote: '"Empowering growing businesses through targeted Meta ad campaigns and creative audience funnels."'
+  },
+  {
+    id: 'google_ads',
+    category: 'social_ads',
+    title: 'Google Ads Proposal',
+    headerTitle: 'GOOGLE ADS (PPC) CAMPAIGN PROPOSAL',
+    subTitle: 'Search, Display & Performance Max Campaigns for High-Intent Leads',
+    headline: 'High-Intent Search Ads • Display & Video • Conversion Tracking • ROI Focus',
+    defaultServices: [
+      {
+        name: 'Google Search & Display Ads Setup & Optimization (Monthly)',
+        description: 'Keyword Research, Search Ads, Display Banners, Negative Keywords & Bidding Strategy',
+        quantity: 1,
+        rate: 15000,
+        amount: 15000
+      },
+      {
+        name: 'Keyword Research & High-CTR Copywriting',
+        description: 'In-depth buyer intent keyword analysis, negative keywords list & ad extensions',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Google Tag Manager & Conversion Tracking Setup',
+        description: 'Call tracking, lead form submit tracking & Analytics goal setup',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. provides ROI-driven Google Ads management to capture customers at the exact moment they search for your services. We build high-intent Search, Display, and Performance Max campaigns with precision tracking.',
+    defaultNotes: '1. Management Fee payable 100% in advance each month.\n2. Google Ad spend budget is paid directly to Google by client.\n3. Monthly performance analytics & keyword reports provided.',
+    defaultTerms: '1. Retainer: Monthly fee paid 100% in advance.\n2. Ad Spend: Direct payment to Google via client\'s billing profile.\n3. Optimization: Weekly bid, keyword & negative keyword optimizations.',
+    defaultQuote: '"Capture high-intent buyers on Google Search at the precise moment they are looking for your services."'
+  },
+  {
+    id: 'multi_platform_ads',
+    category: 'social_ads',
+    title: 'Multi-Platform Advertising Proposal',
+    headerTitle: 'MULTI-PLATFORM ADVERTISING & DIGITAL GROWTH PROPOSAL',
+    subTitle: 'Meta Ads, Google Ads, LinkedIn & Omnichannel Marketing',
+    headline: 'Meta Ads • Google Ads • LinkedIn • Omnichannel Funnel & Lead Gen',
+    defaultServices: [
+      {
+        name: 'Multi-Platform Ad Campaign Strategy & Management (Monthly)',
+        description: 'Omnichannel campaign management across Meta, Google & LinkedIn Ads',
+        quantity: 1,
+        rate: 25000,
+        amount: 25000
+      },
+      {
+        name: 'Multi-Channel Ad Creatives, Copies & Video Ads',
+        description: 'Cross-platform graphics, copy variants, video ad edits & banner sizing',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Cross-Platform Conversion Funnel & Daily Optimization',
+        description: 'Unified tracking, retargeting funnels, A/B testing & weekly optimizations',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. delivers an aggressive 360-degree digital advertising strategy across Facebook, Instagram, Google Search, YouTube, and LinkedIn to maximize lead volume, lower cost-per-lead, and build dominant market presence.',
+    defaultNotes: '1. Monthly retainer fee payable 100% in advance.\n2. Platform ad spend budgets are paid directly by client to respective platforms.\n3. Includes weekly performance updates & monthly strategic reviews.',
+    defaultTerms: '1. Retainer: Paid 100% in advance monthly.\n2. Budget Allocation: Managed across platforms based on real-time cost-per-lead performance.\n3. Reports: Comprehensive multi-channel ROI reporting dashboard.',
+    defaultQuote: '"Dominate your industry with a synchronized multi-platform advertising funnel."'
+  },
+  {
+    id: 'seo_local_lead_gen',
+    category: 'social_ads',
+    title: 'SEO Growth & Local SEO Lead Generation Proposal',
+    headerTitle: 'SEO GROWTH, LOCAL SEO & LEAD GENERATION PROPOSAL',
+    subTitle: 'Rank Higher on Google, Google Business Profile & Local Customer Growth',
+    headline: 'Organic Rankings • Local SEO • GMB Optimization • High Intent Leads',
+    defaultServices: [
+      {
+        name: 'Local SEO & Google Business Profile Optimization (Monthly)',
+        description: 'GMB Optimization, Local Maps Ranking, Citation Building & Local Keyword SEO',
+        quantity: 1,
+        rate: 10000,
+        amount: 10000
+      },
+      {
+        name: 'On-Page SEO & Local Directory Citations',
+        description: 'Meta tags, local schema markup, Geo-tagged image optimization & directory listings',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Monthly Keyword Ranking & Search Console Analytics',
+        description: 'Google Maps rank tracking, organic call/lead tracking & monthly performance report',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. specializes in Local SEO & Google Business Profile optimization to get your business in the Top 3 Google Map Pack results, driving organic local phone calls, store visits, and high-intent customer enquiries.',
+    defaultNotes: '1. Monthly Retainer payable 100% in advance.\n2. Recommended 3-6 months commitment for stable organic Google Maps ranking.\n3. Includes monthly keyword position tracking reports.',
+    defaultTerms: '1. Payment: Paid 100% in advance on monthly cycle.\n2. Commitment: 3-6 months recommended for search engine ranking growth.\n3. Deliverables: GMB posts, local citations, review strategy & technical schema.',
+    defaultQuote: '"Dominate local search results and get discovered by nearby customers when they need your services."'
+  },
+  {
+    id: 'seo_growth_marketing',
+    category: 'social_ads',
+    title: 'SEO Growth & Marketing Proposal',
+    headerTitle: 'SEO GROWTH & CONTENT MARKETING PROPOSAL',
+    subTitle: 'Comprehensive Organic Traffic, Backlinks & Authority Building',
+    headline: 'Organic Traffic • Keyword Authority • Backlink Building • Technical SEO',
+    defaultServices: [
+      {
+        name: 'Enterprise SEO Growth & Technical Optimization (Monthly)',
+        description: 'In-Depth Technical SEO Audit, On-Page Optimization, Site Speed & Keyword Mapping',
+        quantity: 1,
+        rate: 20000,
+        amount: 20000
+      },
+      {
+        name: 'Content Marketing & High DA Backlink Acquisition',
+        description: 'SEO-optimized articles/blogs, guest posts, high-authority backlink outreach',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      },
+      {
+        name: 'Speed & Traffic Growth Reports',
+        description: 'Core Web Vitals tuning, monthly organic traffic breakdown & position tracking',
+        quantity: 1,
+        rate: 0,
+        amount: 0
+      }
+    ],
+    defaultExecutiveSummary: 'HiveRift Softwares Pvt. Ltd. delivers long-term organic growth and domain authority through technical website SEO, strategic content marketing, high-DA backlink building, and mobile performance optimization.',
+    defaultNotes: '1. Payable 100% in advance monthly.\n2. 6-month recommended campaign for sustainable organic traffic growth.\n3. Monthly Google Search Console & Analytics reporting included.',
+    defaultTerms: '1. Retainer: Monthly advance payment.\n2. Deliverables: Technical audit fixes, on-page SEO, content creation & high DA link building.\n3. Results: Long-term compounding organic traffic without ongoing ad spend.',
+    defaultQuote: '"Build permanent organic search engine authority that delivers high-intent leads day after day."'
   }
 ];
+
+export const resolveTemplateId = (id) => {
+  if (id === 'sales_standard') return 'custom_web_app';
+  if (id === 'social_media') return 'facebook_instagram_ads';
+  return id || 'custom_web_app';
+};
 
 export default function ProposalCanvasModal({
   isOpen,
@@ -66,8 +413,9 @@ export default function ProposalCanvasModal({
   const [isEditing, setIsEditing] = useState(initialIsEditing);
   const [saving, setSaving] = useState(false);
 
-  // Template State
-  const [templateType, setTemplateType] = useState('sales_standard');
+  // Category & Template State
+  const [selectedCategory, setSelectedCategory] = useState('website_dev'); // 'website_dev' | 'social_ads'
+  const [templateType, setTemplateType] = useState('custom_web_app');
   const [targetType, setTargetType] = useState('lead'); // 'lead' | 'client'
   const [selectedLeadId, setSelectedLeadId] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -117,15 +465,13 @@ export default function ProposalCanvasModal({
         setSelectedClientId(quotation.client?._id || quotation.client || '');
 
         // Detect template type
-        const isSocial = quotation.templateType === 'social_media' || (quotation.services || []).some(s =>
-          /social|meta|reel|post|ad\s*campaign/i.test(s.name || '')
-        );
-        const currentTpl = isSocial ? 'social_media' : 'sales_standard';
-        const tplDefaults = currentTpl === 'social_media' ? TEMPLATE_OPTIONS[1] : TEMPLATE_OPTIONS[0];
+        const resolvedId = resolveTemplateId(quotation.templateType);
+        const foundTpl = TEMPLATE_OPTIONS.find(t => t.id === resolvedId) || TEMPLATE_OPTIONS[0];
 
-        setTemplateType(currentTpl);
-        setHeaderTitle(quotation.headerTitle || tplDefaults.headerTitle);
-        setSubTitle(quotation.subTitle || tplDefaults.subTitle);
+        setTemplateType(foundTpl.id);
+        setSelectedCategory(foundTpl.category);
+        setHeaderTitle(quotation.headerTitle || foundTpl.headerTitle);
+        setSubTitle(quotation.subTitle || foundTpl.subTitle);
         setCustomClientHeading(
           quotation.customClientHeading ||
           (isClient ? quotation.client?.company || quotation.client?.name : quotation.lead?.company || quotation.lead?.name) ||
@@ -138,10 +484,10 @@ export default function ProposalCanvasModal({
         setSection4Title(quotation.section4Title || '4. TERMS & CONDITIONS');
         setSection5Title(quotation.section5Title || '5. ACCEPTANCE & AUTHORIZATION');
 
-        setExecutiveSummary(quotation.executiveSummary || tplDefaults.defaultExecutiveSummary);
-        setNotes(quotation.notes || tplDefaults.defaultNotes);
-        setTermsAndConditions(quotation.termsAndConditions || tplDefaults.defaultTerms);
-        setFooterQuote(quotation.footerQuote || tplDefaults.defaultQuote);
+        setExecutiveSummary(quotation.executiveSummary || foundTpl.defaultExecutiveSummary);
+        setNotes(quotation.notes || foundTpl.defaultNotes);
+        setTermsAndConditions(quotation.termsAndConditions || foundTpl.defaultTerms);
+        setFooterQuote(quotation.footerQuote || foundTpl.defaultQuote);
 
         setValidUntil(quotation.validUntil ? new Date(quotation.validUntil).toISOString().split('T')[0] : '');
         setDiscount(quotation.discount || 0);
@@ -156,30 +502,32 @@ export default function ProposalCanvasModal({
             amount: Number(s.amount) || ((Number(s.quantity) || 1) * (Number(s.rate) || 0))
           })));
         } else {
-          setServices(tplDefaults.defaultServices.map(s => ({ ...s })));
+          setServices(foundTpl.defaultServices.map(s => ({ ...s })));
         }
       } else {
         // New proposal defaults
-        setTemplateType('sales_standard');
+        const defaultTpl = TEMPLATE_OPTIONS[0];
+        setTemplateType(defaultTpl.id);
+        setSelectedCategory(defaultTpl.category);
         setTargetType('lead');
         setSelectedLeadId('');
         setSelectedClientId('');
-        setHeaderTitle(TEMPLATE_OPTIONS[0].headerTitle);
-        setSubTitle(TEMPLATE_OPTIONS[0].subTitle);
+        setHeaderTitle(defaultTpl.headerTitle);
+        setSubTitle(defaultTpl.subTitle);
         setCustomClientHeading('');
         setSection1Title('1. EXECUTIVE SUMMARY & OBJECTIVES');
         setSection2Title('2. SCOPE OF WORK & COMMERCIAL DELIVERABLES');
         setSection3Title('3. OFFICIAL BANK DETAILS FOR WIRE / UPI TRANSFER');
         setSection4Title('4. TERMS & CONDITIONS');
         setSection5Title('5. ACCEPTANCE & AUTHORIZATION');
-        setExecutiveSummary(TEMPLATE_OPTIONS[0].defaultExecutiveSummary);
-        setNotes(TEMPLATE_OPTIONS[0].defaultNotes);
-        setTermsAndConditions(TEMPLATE_OPTIONS[0].defaultTerms);
-        setFooterQuote(TEMPLATE_OPTIONS[0].defaultQuote);
+        setExecutiveSummary(defaultTpl.defaultExecutiveSummary);
+        setNotes(defaultTpl.defaultNotes);
+        setTermsAndConditions(defaultTpl.defaultTerms);
+        setFooterQuote(defaultTpl.defaultQuote);
         setValidUntil(new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]);
         setDiscount(0);
         setTaxPercent(18);
-        setServices(TEMPLATE_OPTIONS[0].defaultServices.map(s => ({ ...s })));
+        setServices(defaultTpl.defaultServices.map(s => ({ ...s })));
       }
     }
   }, [isOpen, quotation, initialIsEditing, lastLoadedId]);
@@ -217,8 +565,10 @@ export default function ProposalCanvasModal({
 
   // Handle template switch
   const handleSwitchTemplate = (type) => {
-    setTemplateType(type);
-    const tpl = TEMPLATE_OPTIONS.find(t => t.id === type) || TEMPLATE_OPTIONS[0];
+    const resolved = resolveTemplateId(type);
+    setTemplateType(resolved);
+    const tpl = TEMPLATE_OPTIONS.find(t => t.id === resolved) || TEMPLATE_OPTIONS[0];
+    setSelectedCategory(tpl.category);
     setHeaderTitle(tpl.headerTitle);
     setSubTitle(tpl.subTitle);
     setServices(tpl.defaultServices.map(s => ({ ...s })));
@@ -468,7 +818,7 @@ export default function ProposalCanvasModal({
             {!isEditing && quotation && onSendEmail && (
               <button
                 type="button"
-                onClick={() => onSendEmail(quotation._id, quotation.quotationNo, targetEmail)}
+                onClick={() => onSendEmail(quotation)}
                 style={{
                   background: '#047857',
                   color: '#ffffff',
@@ -557,35 +907,100 @@ export default function ProposalCanvasModal({
             {/* Document Body Area */}
             <div style={{ padding: '28px 44px' }}>
 
-              {/* Template Switcher Bar in Edit Mode */}
+              {/* Category & Format Selector Bar in Edit Mode */}
               {isEditing && (
-                <div style={{ marginBottom: 20, background: '#f8fafc', padding: 12, borderRadius: 8, border: '1px solid #cbd5e1' }}>
-                  <div style={{ fontSize: 11.5, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 }}>
-                    Preset Format Quick-Switch:
+                <div style={{ marginBottom: 24, background: '#f8fafc', padding: 16, borderRadius: 12, border: '1px solid #cbd5e1', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span>Select Proposal Domain & Category:</span>
+                    <span style={{ fontSize: 11, background: '#198754', color: '#ffffff', padding: '3px 10px', borderRadius: 12, fontWeight: 800 }}>
+                      10 Specialized Templates Available
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', gap: 10 }}>
-                    {TEMPLATE_OPTIONS.map(tpl => (
-                      <button
-                        key={tpl.id}
-                        type="button"
-                        onClick={() => handleSwitchTemplate(tpl.id)}
-                        style={{
-                          flex: 1,
-                          padding: '8px 12px',
-                          borderRadius: 6,
-                          fontSize: 12.5,
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                          border: templateType === tpl.id ? '2px solid #198754' : '1px solid #cbd5e1',
-                          background: templateType === tpl.id ? '#e9f7ef' : '#ffffff',
-                          color: templateType === tpl.id ? '#198754' : '#334155',
-                          transition: 'all 0.15s',
-                        }}
-                      >
-                        {tpl.title}
-                      </button>
-                    ))}
+
+                  {/* 2 Main Domain Option Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                    {PROPOSAL_CATEGORIES.map(cat => {
+                      const isSelected = selectedCategory === cat.id;
+                      return (
+                        <div
+                          key={cat.id}
+                          onClick={() => {
+                            setSelectedCategory(cat.id);
+                            if (!cat.templates.includes(templateType)) {
+                              handleSwitchTemplate(cat.templates[0]);
+                            }
+                          }}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 10,
+                            cursor: 'pointer',
+                            border: isSelected ? `2.5px solid ${cat.color}` : '1px solid #cbd5e1',
+                            background: isSelected ? cat.bgColor : '#ffffff',
+                            boxShadow: isSelected ? `0 4px 12px ${cat.color}22` : 'none',
+                            transition: 'all 0.15s ease',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                          }}
+                        >
+                          <div style={{
+                            width: 38,
+                            height: 38,
+                            borderRadius: 8,
+                            background: isSelected ? cat.color : '#e2e8f0',
+                            color: isSelected ? '#ffffff' : '#64748b',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 18,
+                            flexShrink: 0
+                          }}>
+                            {cat.icon}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: 13.5, color: isSelected ? cat.color : '#1e293b' }}>
+                              {cat.title}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>
+                              {cat.subtitle}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Dropdown for sub-templates under selected category */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', whiteSpace: 'nowrap' }}>
+                      Proposal Template Format:
+                    </label>
+                    <select
+                      value={templateType}
+                      onChange={(e) => handleSwitchTemplate(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 700,
+                        border: '1.5px solid #198754',
+                        background: '#ffffff',
+                        color: '#0f172a',
+                        outline: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {(PROPOSAL_CATEGORIES.find(c => c.id === selectedCategory)?.templates || []).map(tId => {
+                        const tpl = TEMPLATE_OPTIONS.find(t => t.id === tId);
+                        if (!tpl) return null;
+                        return (
+                          <option key={tpl.id} value={tpl.id}>
+                            📄 {tpl.title}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
                 </div>
               )}

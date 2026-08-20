@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { quotationsAPI, leadsAPI, clientsAPI } from '../../api';
-import { Plus, Search, FileText, Send, Eye, Edit3, Trash2, Building } from 'lucide-react';
+import { Plus, Search, FileText, Send, Eye, Edit3, Trash2, Building, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ProposalCanvasModal from './ProposalCanvasModal';
 
-const QUOTATION_STATUSES = ['all', 'draft', 'sent', 'viewed', 'negotiation', 'accepted', 'rejected', 'expired'];
+const QUOTATION_STATUSES = ['all', 'pending_approval', 'approved', 'rejected_approval', 'draft', 'sent', 'viewed', 'negotiation', 'accepted', 'rejected', 'expired'];
 
 export default function QuotationsPage() {
   const { user } = useAuth();
@@ -65,13 +65,12 @@ export default function QuotationsPage() {
   };
 
   const getQuotationTemplateType = (q) => {
-    if (q?.templateType === 'social_media') return 'social_media';
-    if (q?.templateType === 'sales_standard') return 'sales_standard';
+    if (q?.templateType) return q.templateType;
     const text = (q?.services || []).map(s => (s.name || '') + ' ' + (s.description || '')).join(' ').toLowerCase();
-    if (text.includes('social') || text.includes('meta') || text.includes('reel') || text.includes('instagram') || text.includes('post') || text.includes('facebook')) {
+    if (text.includes('social') || text.includes('meta') || text.includes('reel') || text.includes('instagram') || text.includes('post') || text.includes('facebook') || text.includes('ad')) {
       return 'social_media';
     }
-    return 'sales_standard';
+    return 'custom_web_app';
   };
 
   const handleOpenNew = () => {
@@ -111,6 +110,75 @@ export default function QuotationsPage() {
     }
   };
 
+  const handleApprove = async (id) => {
+    try {
+      await quotationsAPI.approve(id);
+      Swal.fire({
+        icon: 'success',
+        title: 'Quotation Approved!',
+        text: 'Proposal has been approved by SuperAdmin and is ready to email to the client.',
+        confirmButtonColor: '#016139',
+        timer: 2000,
+      });
+      fetchQuotations();
+      if (activeQuotation && activeQuotation._id === id) {
+        setActiveQuotation(prev => ({ ...prev, status: 'approved' }));
+      }
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Approval Failed', text: err.response?.data?.message || 'Could not approve quotation' });
+    }
+  };
+
+  const handleReject = async (id) => {
+    const { value: reason } = await Swal.fire({
+      title: 'Reject Quotation Proposal?',
+      input: 'text',
+      inputLabel: 'Reason for rejection (sent to sales employee):',
+      inputPlaceholder: 'e.g., Update pricing, add 18% GST, revise deliverables...',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Reject Proposal',
+    });
+
+    if (reason !== undefined) {
+      try {
+        await quotationsAPI.reject(id, reason);
+        Swal.fire({
+          icon: 'info',
+          title: 'Quotation Rejected',
+          text: 'Sales employee notified to update quotation.',
+          confirmButtonColor: '#016139',
+          timer: 2000,
+        });
+        fetchQuotations();
+        if (activeQuotation && activeQuotation._id === id) {
+          setActiveQuotation(prev => ({ ...prev, status: 'rejected_approval', rejectionReason: reason }));
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'Failed', text: err.response?.data?.message || 'Could not reject quotation' });
+      }
+    }
+  };
+
+  const handleRequestApproval = async (id) => {
+    try {
+      await quotationsAPI.requestApproval(id);
+      Swal.fire({
+        icon: 'success',
+        title: 'Approval Requested!',
+        text: 'Quotation submitted to SuperAdmin for verification.',
+        confirmButtonColor: '#016139',
+        timer: 2000,
+      });
+      fetchQuotations();
+      if (activeQuotation && activeQuotation._id === id) {
+        setActiveQuotation(prev => ({ ...prev, status: 'pending_approval' }));
+      }
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: 'Failed', text: err.response?.data?.message || 'Could not request approval' });
+    }
+  };
+
   const handleDelete = async (id, quotationNo) => {
     const res = await Swal.fire({
       title: 'Delete Quotation?',
@@ -136,12 +204,45 @@ export default function QuotationsPage() {
     }
   };
 
-  const handleSendEmail = async (id, quotationNo, recipientEmail) => {
+  const handleSendEmail = async (q) => {
+    const isSales = user?.role === 'sales';
+    if (isSales && q.status !== 'approved' && q.status !== 'sent' && q.status !== 'viewed' && q.status !== 'accepted') {
+      if (q.status === 'pending_approval') {
+        return Swal.fire({
+          icon: 'warning',
+          title: 'Approval Pending',
+          text: 'This quotation is currently PENDING SuperAdmin approval. You cannot send it to the client until SuperAdmin approves it.',
+          confirmButtonColor: '#016139'
+        });
+      } else if (q.status === 'rejected_approval') {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Approval Rejected',
+          text: `SuperAdmin rejected this quotation: "${q.rejectionReason || 'Requires revision'}". Please edit and request approval again.`,
+          confirmButtonColor: '#016139'
+        });
+      } else {
+        const reqRes = await Swal.fire({
+          icon: 'question',
+          title: 'SuperAdmin Approval Required',
+          text: 'This quotation must be approved by SuperAdmin before emailing to client. Submit for approval now?',
+          showCancelButton: true,
+          confirmButtonColor: '#016139',
+          confirmButtonText: 'Submit for Approval'
+        });
+        if (reqRes.isConfirmed) {
+          handleRequestApproval(q._id);
+        }
+        return;
+      }
+    }
+
+    const recipientEmail = q.client?.email || q.lead?.email;
     const res = await Swal.fire({
       title: 'Email Official Quotation?',
       html: `
         <div style="text-align: left; font-size: 14px; color: #334155;">
-          <p><strong>Quotation:</strong> ${quotationNo || 'Proposal'}</p>
+          <p><strong>Quotation:</strong> ${q.quotationNo || 'Proposal'}</p>
           <p><strong>Recipient:</strong> <span style="color:#016139; font-weight:700;">${recipientEmail || 'Lead / Client Email'}</span></p>
           <p style="font-size: 12px; color: #64748b; margin-top: 8px;">An official proposal with itemized services, pricing breakdown, bank details and terms will be dispatched to their inbox.</p>
         </div>
@@ -163,7 +264,7 @@ export default function QuotationsPage() {
       });
 
       try {
-        const response = await quotationsAPI.sendEmail(id);
+        const response = await quotationsAPI.sendEmail(q._id);
         Swal.fire({
           icon: 'success',
           title: 'Quotation Emailed!',
@@ -178,8 +279,8 @@ export default function QuotationsPage() {
         Swal.fire({
           icon: 'error',
           title: 'Email Dispatch Failed',
-          text: err.response?.data?.message || 'Could not send quotation email. Please verify lead/client email address.',
-          confirmButtonColor: '#EF4444',
+          text: err.response?.data?.message || 'Could not connect to SMTP server',
+          confirmButtonColor: '#016139',
         });
       }
     }
@@ -187,18 +288,48 @@ export default function QuotationsPage() {
 
   const filteredQuotations = quotations.filter(q => {
     if (!search) return true;
-    const s = search.toLowerCase();
-    return (
-      q.quotationNo?.toLowerCase().includes(s) ||
-      q.lead?.name?.toLowerCase().includes(s) ||
-      q.client?.name?.toLowerCase().includes(s) ||
-      q.lead?.company?.toLowerCase().includes(s) ||
-      q.client?.company?.toLowerCase().includes(s) ||
-      q.createdBy?.name?.toLowerCase().includes(s)
-    );
+    const term = search.toLowerCase();
+    const targetName = (q.client?.name || q.lead?.name || '').toLowerCase();
+    const targetComp = (q.client?.company || q.lead?.company || '').toLowerCase();
+    const creatorName = (q.createdBy?.name || '').toLowerCase();
+    const qNo = (q.quotationNo || '').toLowerCase();
+    return qNo.includes(term) || targetName.includes(term) || targetComp.includes(term) || creatorName.includes(term);
   });
 
   const isAdminOrManager = user?.role === 'admin' || user?.role === 'management';
+
+  const renderStatusBadge = (status, rejectionReason) => {
+    switch (status) {
+      case 'pending_approval':
+        return (
+          <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <Clock size={11} /> PENDING APPROVAL
+          </span>
+        );
+      case 'approved':
+        return (
+          <span style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#D1FAE5', color: '#065F46', border: '1px solid #A7F3D0', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <CheckCircle size={11} /> APPROVED
+          </span>
+        );
+      case 'rejected_approval':
+        return (
+          <span title={rejectionReason ? `Reason: ${rejectionReason}` : ''} style={{ fontSize: 11, fontWeight: 800, padding: '3px 8px', borderRadius: 6, background: '#FEE2E2', color: '#991B1B', border: '1px solid #FCA5A5', display: 'inline-flex', alignItems: 'center', gap: 4, cursor: 'help' }}>
+            <XCircle size={11} /> REJECTED
+          </span>
+        );
+      case 'sent':
+        return <span className="status-pill status-active">SENT</span>;
+      case 'viewed':
+        return <span className="status-pill status-contacted">VIEWED</span>;
+      case 'accepted':
+        return <span className="status-pill status-won">ACCEPTED</span>;
+      case 'rejected':
+        return <span className="status-pill status-lost">REJECTED</span>;
+      default:
+        return <span className="status-pill status-new">{status?.toUpperCase() || 'DRAFT'}</span>;
+    }
+  };
 
   return (
     <div>
@@ -207,8 +338,8 @@ export default function QuotationsPage() {
           <h1 className="page-title">Sales Quotations & Proposals</h1>
           <p className="page-subtitle">
             {isAdminOrManager
-              ? 'Generate, review, and track quotations created across all sales teams'
-              : 'Generate, edit, email, and track your commercial client proposals'}
+              ? 'Review, approve, and track commercial proposals created by sales representatives'
+              : 'Generate proposals, request SuperAdmin approval, and track client dispatches'}
           </p>
         </div>
         <button className="btn btn-primary" onClick={handleOpenNew}>
@@ -225,7 +356,7 @@ export default function QuotationsPage() {
               className={`status-tab ${statusTab === s ? 'active' : ''}`}
               onClick={() => setStatusTab(s)}
             >
-              {s.toUpperCase()}
+              {s.replace('_', ' ').toUpperCase()}
             </button>
           ))}
         </div>
@@ -261,38 +392,34 @@ export default function QuotationsPage() {
           <table className="table">
             <thead>
               <tr>
-                <th>Quotation No</th>
-                <th>Client / Lead</th>
+                <th>Quotation #</th>
+                <th>Target Lead / Client</th>
                 {isAdminOrManager && <th>Created By</th>}
-                <th>Format Template</th>
-                <th>Total Proposal (₹)</th>
+                <th>Domain Category</th>
+                <th>Total Value</th>
                 <th>Valid Until</th>
                 <th>Status</th>
-                <th>Actions</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredQuotations.map(q => (
                 <tr key={q._id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--primary)' }}>
-                      <FileText size={15} /> {q.quotationNo}
+                    <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 13.5 }}>
+                      {q.quotationNo}
                     </div>
                   </td>
                   <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                      {q.client ? q.client.name : q.lead ? q.lead.name : 'N/A'}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                      {q.client ? (
-                        <span style={{ color: '#016139', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <Building size={11} /> {q.client.company || 'Client Profile'}
-                        </span>
-                      ) : q.lead ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <FileText size={11} /> {q.lead.company || 'Lead Inquiry'}
-                        </span>
-                      ) : '-'}
+                    <div>
+                      <strong style={{ color: 'var(--text-heading)', fontSize: 13.5 }}>
+                        {q.customClientHeading || q.client?.company || q.lead?.company || q.client?.name || q.lead?.name || 'Valued Prospect'}
+                      </strong>
+                      {(q.client?.email || q.lead?.email) && (
+                        <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                          {q.client?.email || q.lead?.email}
+                        </div>
+                      )}
                     </div>
                   </td>
                   {isAdminOrManager && (
@@ -301,36 +428,24 @@ export default function QuotationsPage() {
                         <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
                           {q.createdBy?.name || 'Admin'}
                         </span>
-                        {q.createdBy?.role && (
-                          <span style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            borderRadius: 4,
-                            background: q.createdBy.role === 'admin' ? '#E9F8F1' : '#F1F5F9',
-                            color: q.createdBy.role === 'admin' ? '#016139' : '#475569',
-                            textTransform: 'uppercase'
-                          }}>
-                            {q.createdBy.role}
-                          </span>
-                        )}
                       </div>
                     </td>
                   )}
                   <td>
                     {(() => {
                       const tplType = getQuotationTemplateType(q);
+                      const isAds = /social|meta|ads|seo|google/i.test(tplType);
                       return (
                         <span style={{
                           fontSize: 11,
                           fontWeight: 700,
                           padding: '3px 8px',
                           borderRadius: 6,
-                          background: tplType === 'social_media' ? '#EFF6FF' : '#F0FDF4',
-                          color: tplType === 'social_media' ? '#1D4ED8' : '#15803D',
-                          border: `1px solid ${tplType === 'social_media' ? '#BFDBFE' : '#BBF7D0'}`
+                          background: isAds ? '#EFF6FF' : '#F0FDF4',
+                          color: isAds ? '#1D4ED8' : '#15803D',
+                          border: `1px solid ${isAds ? '#BFDBFE' : '#BBF7D0'}`
                         }}>
-                          {tplType === 'social_media' ? 'Social Media & Ads' : 'IT Software'}
+                          {isAds ? '📣 Social Media & Ads' : '🌐 Web & Software'}
                         </span>
                       );
                     })()}
@@ -342,25 +457,59 @@ export default function QuotationsPage() {
                     {new Date(q.validUntil).toLocaleDateString()}
                   </td>
                   <td>
-                    <select
-                      className="form-select"
-                      style={{ padding: '3px 8px', fontSize: 12, width: 'auto', fontWeight: 600 }}
-                      value={q.status}
-                      onChange={e => handleStatusUpdate(q._id, e.target.value)}
-                    >
-                      {QUOTATION_STATUSES.filter(s => s !== 'all').map(s => (
-                        <option key={s} value={s}>{s.toUpperCase()}</option>
-                      ))}
-                    </select>
+                    {renderStatusBadge(q.status, q.rejectionReason)}
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                  <td style={{ textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+                      {/* SuperAdmin Approval Buttons for Pending Quotations */}
+                      {isAdminOrManager && q.status === 'pending_approval' && (
+                        <>
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: '#10B981', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                            onClick={() => handleApprove(q._id)}
+                            title="Approve Quotation"
+                          >
+                            <CheckCircle size={12} /> Approve
+                          </button>
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: '#EF4444', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                            onClick={() => handleReject(q._id)}
+                            title="Reject Quotation"
+                          >
+                            <XCircle size={12} /> Reject
+                          </button>
+                        </>
+                      )}
+
+                      {/* Sales Employee Request Approval Button */}
+                      {!isAdminOrManager && (q.status === 'draft' || q.status === 'rejected_approval') && (
+                        <button
+                          className="btn btn-sm"
+                          style={{ background: '#F59E0B', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                          onClick={() => handleRequestApproval(q._id)}
+                          title="Submit to SuperAdmin for Approval"
+                        >
+                          <Clock size={12} /> Request Approval
+                        </button>
+                      )}
+
                       {/* Email Action */}
                       <button
                         className="btn btn-sm"
-                        style={{ background: '#016139', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
-                        onClick={() => handleSendEmail(q._id, q.quotationNo, q.client?.email || q.lead?.email)}
-                        title="Send Proposal via Email"
+                        style={{
+                          background: q.status === 'approved' || q.status === 'sent' || isAdminOrManager ? '#016139' : '#94a3b8',
+                          color: '#ffffff',
+                          padding: '4px 8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontWeight: 600,
+                          cursor: !isAdminOrManager && q.status === 'pending_approval' ? 'not-allowed' : 'pointer'
+                        }}
+                        onClick={() => handleSendEmail(q)}
+                        title={q.status === 'pending_approval' && !isAdminOrManager ? 'Pending SuperAdmin Approval' : 'Send Proposal via Email'}
                       >
                         <Send size={12} /> Email
                       </button>
@@ -386,14 +535,16 @@ export default function QuotationsPage() {
                       </button>
 
                       {/* Delete Action */}
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ color: 'var(--red)', padding: '4px 6px' }}
-                        onClick={() => handleDelete(q._id, q.quotationNo)}
-                        title="Delete Quotation"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      {isAdminOrManager && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ color: 'var(--red)', padding: '4px 6px' }}
+                          onClick={() => handleDelete(q._id, q.quotationNo)}
+                          title="Delete Quotation"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

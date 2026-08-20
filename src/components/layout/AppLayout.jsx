@@ -8,9 +8,16 @@ export default function AppLayout() {
 
   return (
     <div className="crm-layout">
+      {/* Mobile/Tablet Backdrop */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="crm-main">
-        <Header onMenuToggle={() => setSidebarOpen(true)} />
+        <Header onMenuToggle={() => setSidebarOpen(prev => !prev)} />
         <main className="crm-content">
           <Outlet />
         </main>

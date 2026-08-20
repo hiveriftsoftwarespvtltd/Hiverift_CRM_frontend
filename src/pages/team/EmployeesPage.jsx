@@ -707,7 +707,7 @@ export default function EmployeesPage() {
                       value={formData.reportingTo}
                       onChange={(e) => setFormData({ ...formData, reportingTo: e.target.value })}
                     >
-                      <option value="">Direct to Super Admin (Vineet)</option>
+                      <option value="">Direct to Super Admin</option>
                       {availableManagers.map((m) => (
                         <option key={m._id} value={m._id}>
                           {m.name} ({m.isDepartmentHead ? `${m.department} Head` : m.role.toUpperCase()})

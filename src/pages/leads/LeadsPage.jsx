@@ -3,7 +3,8 @@ import { leadsAPI, usersAPI } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import {
   Plus, Search, Filter, Phone, Mail, MessageSquare, UserPlus,
-  MoreVertical, Eye, Edit3, Trash2, Calendar, RotateCcw, X, ShieldCheck, UserCheck
+  MoreVertical, Eye, Edit3, Trash2, Calendar, RotateCcw, X, ShieldCheck, UserCheck,
+  ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -52,10 +53,15 @@ export default function LeadsPage() {
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState('');
+  const [assignedFilter, setAssignedFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [salesUsers, setSalesUsers] = useState([]);
+
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
 
   // Create / Edit Modal State
   const [showModal, setShowModal] = useState(false);
@@ -66,16 +72,23 @@ export default function LeadsPage() {
 
   useEffect(() => {
     fetchLeads();
+  }, [page, limit, statusTab, search, sourceFilter, assignedFilter, dateFilter, customStartDate, customEndDate]);
+
+  useEffect(() => {
     fetchSalesUsers();
-  }, [statusTab, search, sourceFilter, dateFilter, customStartDate, customEndDate]);
+  }, []);
 
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = {
+        page,
+        limit,
+      };
       if (statusTab !== 'all') params.status = statusTab;
       if (search) params.search = search;
       if (sourceFilter) params.source = sourceFilter;
+      if (assignedFilter) params.assignedTo = assignedFilter;
 
       // Date filtering
       if (dateFilter === 'custom') {
@@ -107,9 +120,54 @@ export default function LeadsPage() {
   const handleResetFilters = () => {
     setSearch('');
     setSourceFilter('');
+    setAssignedFilter('');
     setDateFilter('all');
     setCustomStartDate('');
     setCustomEndDate('');
+    setPage(1);
+  };
+
+  const handleStatusChange = (status) => {
+    setStatusTab(status);
+    setPage(1);
+  };
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(1);
+  };
+
+  const handleSourceChange = (val) => {
+    setSourceFilter(val);
+    setPage(1);
+  };
+
+  const handleAssignedChange = (val) => {
+    setAssignedFilter(val);
+    setPage(1);
+  };
+
+  const handleDateFilterChange = (val) => {
+    setDateFilter(val);
+    setPage(1);
+  };
+
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (page <= 4) {
+        pages.push(1, 2, 3, 4, 5, '...', totalPages);
+      } else if (page >= totalPages - 3) {
+        pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, '...', page - 1, page, page + 1, '...', totalPages);
+      }
+    }
+    return pages;
   };
 
   const handleOpenCreate = () => {
@@ -229,7 +287,7 @@ export default function LeadsPage() {
             <button
               key={s}
               className={`status-tab ${statusTab === s ? 'active' : ''}`}
-              onClick={() => setStatusTab(s)}
+              onClick={() => handleStatusChange(s)}
             >
               {s.toUpperCase()}
             </button>
@@ -237,24 +295,39 @@ export default function LeadsPage() {
         </div>
       </div>
 
-      {/* Filters Bar with Date-Wise Filtering */}
+      {/* Filters Bar with Date-Wise & Assigned Staff Filtering */}
       <div className="filters-bar" style={{ borderRadius: '12px 12px 0 0', border: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
         <div className="search-box" style={{ minWidth: 240, flex: 1 }}>
           <Search />
           <input
             className="search-input"
-            placeholder="Search leads by name, company, phone, email..."
+            placeholder="Search by name, company, phone, email, or assigned staff (e.g. Harsh)..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => handleSearchChange(e.target.value)}
           />
         </div>
+
+        {/* Assigned Staff Filter (for Admin/Managers) */}
+        {isAdminOrManager && (
+          <select
+            className="form-select"
+            style={{ maxWidth: 170, fontWeight: assignedFilter ? 700 : 400, borderColor: assignedFilter ? 'var(--primary)' : 'var(--border)' }}
+            value={assignedFilter}
+            onChange={e => handleAssignedChange(e.target.value)}
+          >
+            <option value="">All Assigned Staff</option>
+            {salesUsers.map(u => (
+              <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+            ))}
+          </select>
+        )}
 
         {/* Source Filter */}
         <select
           className="form-select"
-          style={{ maxWidth: 150 }}
+          style={{ maxWidth: 140 }}
           value={sourceFilter}
-          onChange={e => setSourceFilter(e.target.value)}
+          onChange={e => handleSourceChange(e.target.value)}
         >
           <option value="">All Sources</option>
           {LEAD_SOURCES.map(s => (
@@ -266,9 +339,9 @@ export default function LeadsPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <select
             className="form-select"
-            style={{ minWidth: 160, fontWeight: dateFilter !== 'all' ? 700 : 400, borderColor: dateFilter !== 'all' ? 'var(--primary)' : 'var(--border)' }}
+            style={{ minWidth: 150, fontWeight: dateFilter !== 'all' ? 700 : 400, borderColor: dateFilter !== 'all' ? 'var(--primary)' : 'var(--border)' }}
             value={dateFilter}
-            onChange={e => setDateFilter(e.target.value)}
+            onChange={e => handleDateFilterChange(e.target.value)}
           >
             <option value="all">All Dates</option>
             <option value="today">Today</option>
@@ -289,7 +362,7 @@ export default function LeadsPage() {
               className="form-input"
               style={{ width: 130, padding: '3px 6px', fontSize: 12 }}
               value={customStartDate}
-              onChange={e => setCustomStartDate(e.target.value)}
+              onChange={e => { setCustomStartDate(e.target.value); setPage(1); }}
             />
             <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>To:</span>
             <input
@@ -297,7 +370,7 @@ export default function LeadsPage() {
               className="form-input"
               style={{ width: 130, padding: '3px 6px', fontSize: 12 }}
               value={customEndDate}
-              onChange={e => setCustomEndDate(e.target.value)}
+              onChange={e => { setCustomEndDate(e.target.value); setPage(1); }}
             />
           </div>
         )}
@@ -317,7 +390,7 @@ export default function LeadsPage() {
       </div>
 
       {/* Table */}
-      <div className="table-wrapper" style={{ borderRadius: '0 0 12px 12px' }}>
+      <div className="table-wrapper" style={{ borderRadius: total > 0 ? 0 : '0 0 12px 12px', borderBottom: total > 0 ? 'none' : '1px solid var(--border)' }}>
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center' }}>
             <div className="loading-spinner" style={{ margin: '0 auto' }} />
@@ -358,35 +431,77 @@ export default function LeadsPage() {
                     <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{lead.leadId}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
                       <Calendar size={11} />
-                      {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                      {new Date(lead.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </div>
                   </td>
                   <td>
                     <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{lead.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{lead.company || 'Individual'}</div>
+                    {lead.company && <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{lead.company}</div>}
                   </td>
                   <td>
-                    <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Phone size={12} /> {lead.phone}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                      <Phone size={12} style={{ color: 'var(--text-muted)' }} />
+                      <a href={`tel:${lead.phone}`} onClick={e => e.stopPropagation()} style={{ color: 'inherit' }}>{lead.phone}</a>
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Mail size={12} /> {lead.email || '-'}
-                    </div>
+                    {lead.email && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 }}>
+                        <Mail size={11} />
+                        <span>{lead.email}</span>
+                      </div>
+                    )}
                   </td>
                   <td>
-                    <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-body)' }}>
+                    <span className="badge badge-secondary" style={{ textTransform: 'uppercase', fontSize: 10 }}>
                       {lead.source}
                     </span>
                   </td>
-                  <td style={{ fontWeight: 600 }}>₹{lead.estimatedValue?.toLocaleString() || '0'}</td>
-                  <td>{lead.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}</td>
+                  <td style={{ fontWeight: 600 }}>
+                    {lead.estimatedValue ? `₹${Number(lead.estimatedValue).toLocaleString('en-IN')}` : '₹0'}
+                  </td>
+                  <td>
+                    {lead.assignedTo ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: '50%',
+                          background: 'var(--primary-light)', color: 'var(--primary)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 10, fontWeight: 700
+                        }}>
+                          {lead.assignedTo.name?.charAt(0)}
+                        </div>
+                        <span style={{ fontSize: 12 }}>{lead.assignedTo.name}</span>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12, fontStyle: 'italic' }}>Unassigned</span>
+                    )}
+                  </td>
                   <td>
                     <span className={`badge badge-${lead.status}`}>
                       {lead.status.toUpperCase()}
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                    <div className="table-actions" onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 4 }}>
+                      {/* WhatsApp Button */}
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: '#25D366', padding: '4px 6px' }}
+                        onClick={(e) => handleQuickWhatsApp(lead, e)}
+                        title="Chat on WhatsApp"
+                      >
+                        <MessageSquare size={15} />
+                      </button>
+
+                      {/* Convert to Client Button */}
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ color: '#016139', padding: '4px 6px' }}
+                        onClick={(e) => handleConvertToClient(lead, e)}
+                        title="Convert directly to Client"
+                      >
+                        <UserCheck size={15} />
+                      </button>
+
                       {/* View Button */}
                       <button
                         className="btn btn-ghost btn-sm"
@@ -423,6 +538,149 @@ export default function LeadsPage() {
           </table>
         )}
       </div>
+
+      {/* Pagination Bar */}
+      {total > 0 && (
+        <div style={{
+          background: '#ffffff',
+          border: '1px solid var(--border)',
+          borderTop: 'none',
+          borderRadius: '0 0 12px 12px',
+          padding: '12px 20px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 14
+        }}>
+          {/* Left: Summary Info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
+              Showing <strong style={{ color: 'var(--text-heading)' }}>{((page - 1) * limit) + 1}</strong> to{' '}
+              <strong style={{ color: 'var(--text-heading)' }}>{Math.min(page * limit, total)}</strong> of{' '}
+              <strong style={{ color: 'var(--primary)', fontWeight: 800 }}>{total}</strong> leads
+            </span>
+
+            {/* Limit Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Per page:</span>
+              <select
+                className="form-select"
+                style={{ width: 'auto', padding: '4px 8px', fontSize: 12, fontWeight: 600, borderRadius: 6 }}
+                value={limit}
+                onChange={e => { setLimit(Number(e.target.value)); setPage(1); }}
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Right: Page Navigation Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {/* First Page */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              disabled={page <= 1}
+              onClick={() => setPage(1)}
+              style={{ padding: '6px 8px', opacity: page <= 1 ? 0.4 : 1, cursor: page <= 1 ? 'not-allowed' : 'pointer' }}
+              title="First Page"
+            >
+              <ChevronsLeft size={16} />
+            </button>
+
+            {/* Prev Page */}
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              disabled={page <= 1}
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              style={{
+                padding: '6px 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontWeight: 600,
+                fontSize: 12.5,
+                opacity: page <= 1 ? 0.4 : 1,
+                cursor: page <= 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <ChevronLeft size={14} /> Prev
+            </button>
+
+            {/* Page Number Pills */}
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {getPageNumbers().map((p, idx) => {
+                if (p === '...') {
+                  return <span key={`ellipsis-${idx}`} style={{ padding: '0 6px', color: 'var(--text-muted)' }}>...</span>;
+                }
+                const isActive = p === page;
+                return (
+                  <button
+                    key={`page-${p}`}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      border: isActive ? '1px solid var(--primary)' : '1px solid var(--border)',
+                      background: isActive ? 'var(--primary)' : '#ffffff',
+                      color: isActive ? '#ffffff' : 'var(--text-heading)',
+                      fontWeight: isActive ? 800 : 600,
+                      fontSize: 12.5,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Page */}
+            <button
+              type="button"
+              className="btn btn-sm btn-secondary"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              style={{
+                padding: '6px 12px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
+                fontWeight: 600,
+                fontSize: 12.5,
+                opacity: page >= totalPages ? 0.4 : 1,
+                cursor: page >= totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Next <ChevronRight size={14} />
+            </button>
+
+            {/* Last Page */}
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost"
+              disabled={page >= totalPages}
+              onClick={() => setPage(totalPages)}
+              style={{ padding: '6px 8px', opacity: page >= totalPages ? 0.4 : 1, cursor: page >= totalPages ? 'not-allowed' : 'pointer' }}
+              title="Last Page"
+            >
+              <ChevronsRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Lead Modal */}
       {showModal && (

@@ -31,6 +31,7 @@ import RenewalsPage from './pages/renewals/RenewalsPage';
 import AttendancePage from './pages/team/AttendancePage';
 import LeavesPage from './pages/team/LeavesPage';
 import EmployeesPage from './pages/team/EmployeesPage';
+import WfhMonitoringPage from './pages/team/WfhMonitoringPage';
 
 // Analytics & Admin
 import ReportsPage from './pages/reports/ReportsPage';
@@ -76,6 +77,8 @@ export default function App() {
               {/* HR & Team */}
               <Route path="/attendance" element={<AttendancePage />} />
               <Route path="/team/attendance" element={<AttendancePage />} />
+              <Route path="/wfh" element={<WfhMonitoringPage />} />
+              <Route path="/wfh-monitoring" element={<WfhMonitoringPage />} />
               <Route path="/leaves" element={<LeavesPage />} />
               <Route path="/team/leaves" element={<LeavesPage />} />
               <Route path="/employees" element={<EmployeesPage />} />

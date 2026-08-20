@@ -18,6 +18,7 @@ import {
   Settings,
   Zap,
   Receipt,
+  Laptop,
 } from 'lucide-react';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -89,6 +90,7 @@ export default function Sidebar({ isOpen, onClose }) {
         {
           title: 'TEAM',
           items: [
+            { label: 'WFH Monitoring', path: '/wfh-monitoring', icon: <Laptop size={18} /> },
             { label: 'Employees', path: '/employees', icon: <UserCog size={18} /> },
             { label: 'Attendance', path: '/attendance', icon: <Clock size={18} /> },
             { label: 'Leaves', path: '/leaves', icon: <CalendarDays size={18} /> },
@@ -129,6 +131,7 @@ export default function Sidebar({ isOpen, onClose }) {
       {
         title: 'TEAM',
         items: [
+          { label: 'WFH Monitoring', path: '/wfh-monitoring', icon: <Laptop size={18} /> },
           { label: 'Employees', path: '/employees', icon: <UserCog size={18} /> },
           { label: 'Attendance', path: '/attendance', icon: <Clock size={18} /> },
           { label: 'Leaves', path: '/leaves', icon: <CalendarDays size={18} /> },
@@ -190,7 +193,7 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       {/* User Footer */}
-      <div style={{ marginTop: 'auto', padding: '16px 20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div className="sidebar-footer">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
