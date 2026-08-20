@@ -514,14 +514,14 @@ export default function QuotationsPage() {
                         <Send size={12} /> Email
                       </button>
 
-                      {/* Preview Action */}
+                      {/* Preview / Download Action */}
                       <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                        className="btn btn-sm"
+                        style={{ background: '#0284C7', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
                         onClick={() => handleOpenPreview(q)}
-                        title="View Full Proposal Document"
+                        title="Download / View Proposal Document"
                       >
-                        <Eye size={13} /> Preview
+                        <FileText size={13} /> Download / View
                       </button>
 
                       {/* Edit Action */}

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { quotationsAPI } from '../../api';
 import Swal from 'sweetalert2';
+import { HIVERIFT_LOGO_BASE64 } from '../../assets/logoBase64';
 
 export const PROPOSAL_CATEGORIES = [
   {
@@ -685,10 +686,54 @@ export default function ProposalCanvasModal({
     }
   };
 
+  const handleDownloadHtml = () => {
+    const element = document.getElementById('printable-proposal-sheet');
+    if (!element) return;
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${quotation ? quotation.quotationNo : 'Quotation'}_${(headerTitle || 'Proposal').replace(/\s+/g, '_')}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #212121; }
+  .proposal-sheet-container { max-width: 860px; margin: 0 auto; background: #ffffff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #198754; padding: 8px 12px; }
+  th { background-color: #e9f7ef; text-align: left; }
+  @media print {
+    body { background: #ffffff; padding: 0; }
+    .proposal-sheet-container { box-shadow: none; max-width: 100%; width: 100%; border-radius: 0; }
+  }
+</style>
+</head>
+<body>
+  <div class="proposal-sheet-container">
+    ${element.innerHTML}
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const cleanNo = quotation ? quotation.quotationNo : 'Proposal';
+    const cleanTitle = (headerTitle || 'Quotation').replace(/[^a-zA-Z0-9_-]/g, '_');
+    link.setAttribute('download', `${cleanNo}_${cleanTitle}.html`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const currentTemplateObj = TEMPLATE_OPTIONS.find(t => t.id === templateType) || TEMPLATE_OPTIONS[0];
 
   return (
     <div
+      id="proposal-canvas-modal-overlay"
       className="modal-overlay"
       style={{
         position: 'fixed',
@@ -703,6 +748,73 @@ export default function ProposalCanvasModal({
         boxSizing: 'border-box',
       }}
     >
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          html, body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            color: #000000 !important;
+            width: 100% !important;
+            height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          #printable-proposal-sheet,
+          #printable-proposal-sheet * {
+            visibility: visible !important;
+          }
+          #proposal-canvas-modal-overlay,
+          #proposal-canvas-modal-overlay > div,
+          #printable-proposal-sheet-wrapper {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            box-shadow: none !important;
+            border: none !important;
+            visibility: visible !important;
+            overflow: visible !important;
+          }
+          #printable-proposal-sheet {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 12mm 14mm 12mm 14mm !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            background: #ffffff !important;
+            box-sizing: border-box !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          img {
+            max-width: 100% !important;
+            height: auto !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          table, th, td, div, span, p, h1, h2, h3, h4, h5, h6 {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+        }
+      `}</style>
       <div
         style={{
           width: '100%',
@@ -719,6 +831,7 @@ export default function ProposalCanvasModal({
       >
         {/* Top Sticky Action Bar */}
         <div
+          className="no-print"
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -808,9 +921,36 @@ export default function ProposalCanvasModal({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 5,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.12)',
                 }}
+                title="Print or Save as PDF document"
               >
                 <Printer size={14} /> Print / Save PDF
+              </button>
+            )}
+
+            {/* Download HTML in View Mode */}
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={handleDownloadHtml}
+                style={{
+                  background: '#10B981',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '6px 14px',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  boxShadow: '0 2px 6px rgba(16, 185, 129, 0.3)',
+                }}
+                title="Download complete formatted HTML quotation proposal file"
+              >
+                <FileText size={14} /> Download HTML
               </button>
             )}
 
@@ -858,6 +998,7 @@ export default function ProposalCanvasModal({
 
         {/* Scrollable Document Canvas Container */}
         <div
+          id="printable-proposal-sheet-wrapper"
           style={{
             background: '#f1f5f9',
             flex: 1,
@@ -888,10 +1029,9 @@ export default function ProposalCanvasModal({
             <div style={{ padding: '24px 36px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1.5px solid #198754' }}>
               <div>
                 <img
-                  src="/logo.png"
+                  src={HIVERIFT_LOGO_BASE64}
                   alt="HiveRift Logo"
                   style={{ maxHeight: 52, maxWidth: 200, objectFit: 'contain', display: 'block' }}
-                  onError={(e) => { e.target.src = 'https://hiverift.com/logo.png'; }}
                 />
               </div>
               <div style={{ textAlign: 'right', fontSize: 11, color: '#334155', lineHeight: 1.45 }}>
@@ -1916,6 +2056,31 @@ export default function ProposalCanvasModal({
                   {footerQuote}
                 </div>
               )}
+
+              {/* Designed & Developed by HiveRift Footer Branding Line */}
+              <div
+                style={{
+                  marginTop: 26,
+                  paddingTop: 12,
+                  borderTop: '1px solid #e2e8f0',
+                  textAlign: 'center',
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  color: '#016139',
+                  letterSpacing: '0.4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                }}
+              >
+                <span>Designed & Developed by</span>
+                <strong style={{ color: '#014D3B', fontWeight: 800 }}>HiveRift Softwares Pvt. Ltd.</strong>
+                <span>•</span>
+                <span style={{ color: '#198754', fontWeight: 700 }}>
+                  www.hiverift.com
+                </span>
+              </div>
             </div>
           </div>
         </div>
