@@ -5,6 +5,7 @@ import { quotationsAPI, leadsAPI, clientsAPI } from '../../api';
 import { Plus, Search, FileText, Send, Eye, Edit3, Trash2, Building, CheckCircle, XCircle, Clock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import ProposalCanvasModal from './ProposalCanvasModal';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const QUOTATION_STATUSES = ['all', 'pending_approval', 'approved', 'rejected_approval', 'draft', 'sent', 'viewed', 'negotiation', 'accepted', 'rejected', 'expired'];
 
@@ -18,8 +19,13 @@ export default function QuotationsPage() {
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [quotationPage, setQuotationPage] = useState(1);
   const [leads, setLeads] = useState([]);
   const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    setQuotationPage(1);
+  }, [search, statusTab]);
 
   // Proposal Canvas Modal State
   const [canvasModalOpen, setCanvasModalOpen] = useState(!!(leadIdParam || clientIdParam));
@@ -389,168 +395,184 @@ export default function QuotationsPage() {
             </button>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Quotation #</th>
-                <th>Target Lead / Client</th>
-                {isAdminOrManager && <th>Created By</th>}
-                <th>Domain Category</th>
-                <th>Total Value</th>
-                <th>Valid Until</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredQuotations.map(q => (
-                <tr key={q._id}>
-                  <td>
-                    <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 13.5 }}>
-                      {q.quotationNo}
-                    </div>
-                  </td>
-                  <td>
-                    <div>
-                      <strong style={{ color: 'var(--text-heading)', fontSize: 13.5 }}>
-                        {q.customClientHeading || q.client?.company || q.lead?.company || q.client?.name || q.lead?.name || 'Valued Prospect'}
-                      </strong>
-                      {(q.client?.email || q.lead?.email) && (
-                        <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                          {q.client?.email || q.lead?.email}
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Quotation #</th>
+                    <th>Target Lead / Client</th>
+                    {isAdminOrManager && <th>Created By</th>}
+                    <th>Domain Category</th>
+                    <th>Total Value</th>
+                    <th>Valid Until</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredQuotations
+                    .slice((quotationPage - 1) * 7, quotationPage * 7)
+                    .map(q => (
+                    <tr key={q._id}>
+                      <td>
+                        <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 13.5 }}>
+                          {q.quotationNo}
                         </div>
-                      )}
-                    </div>
-                  </td>
-                  {isAdminOrManager && (
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
-                          {q.createdBy?.name || 'Admin'}
-                        </span>
-                      </div>
-                    </td>
-                  )}
-                  <td>
-                    {(() => {
-                      const tplType = getQuotationTemplateType(q);
-                      const isAds = /social|meta|ads|seo|google/i.test(tplType);
-                      return (
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          background: isAds ? '#EFF6FF' : '#F0FDF4',
-                          color: isAds ? '#1D4ED8' : '#15803D',
-                          border: `1px solid ${isAds ? '#BFDBFE' : '#BBF7D0'}`
-                        }}>
-                          {isAds ? '📣 Social Media & Ads' : '🌐 Web & Software'}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>
-                    ₹{q.totalAmount?.toLocaleString() || 0}
-                  </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {new Date(q.validUntil).toLocaleDateString()}
-                  </td>
-                  <td>
-                    {renderStatusBadge(q.status, q.rejectionReason)}
-                  </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
-                      {/* SuperAdmin Approval Buttons for Pending Quotations */}
-                      {isAdminOrManager && q.status === 'pending_approval' && (
-                        <>
-                          <button
-                            className="btn btn-sm"
-                            style={{ background: '#10B981', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
-                            onClick={() => handleApprove(q._id)}
-                            title="Approve Quotation"
-                          >
-                            <CheckCircle size={12} /> Approve
-                          </button>
-                          <button
-                            className="btn btn-sm"
-                            style={{ background: '#EF4444', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
-                            onClick={() => handleReject(q._id)}
-                            title="Reject Quotation"
-                          >
-                            <XCircle size={12} /> Reject
-                          </button>
-                        </>
-                      )}
-
-                      {/* Sales Employee Request Approval Button */}
-                      {!isAdminOrManager && (q.status === 'draft' || q.status === 'rejected_approval') && (
-                        <button
-                          className="btn btn-sm"
-                          style={{ background: '#F59E0B', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
-                          onClick={() => handleRequestApproval(q._id)}
-                          title="Submit to SuperAdmin for Approval"
-                        >
-                          <Clock size={12} /> Request Approval
-                        </button>
-                      )}
-
-                      {/* Email Action */}
-                      <button
-                        className="btn btn-sm"
-                        style={{
-                          background: q.status === 'approved' || q.status === 'sent' || isAdminOrManager ? '#016139' : '#94a3b8',
-                          color: '#ffffff',
-                          padding: '4px 8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontWeight: 600,
-                          cursor: !isAdminOrManager && q.status === 'pending_approval' ? 'not-allowed' : 'pointer'
-                        }}
-                        onClick={() => handleSendEmail(q)}
-                        title={q.status === 'pending_approval' && !isAdminOrManager ? 'Pending SuperAdmin Approval' : 'Send Proposal via Email'}
-                      >
-                        <Send size={12} /> Email
-                      </button>
-
-                      {/* Preview / Download Action */}
-                      <button
-                        className="btn btn-sm"
-                        style={{ background: '#0284C7', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
-                        onClick={() => handleOpenPreview(q)}
-                        title="Download / View Proposal Document"
-                      >
-                        <FileText size={13} /> Download / View
-                      </button>
-
-                      {/* Edit Action */}
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
-                        onClick={() => handleOpenEdit(q)}
-                        title="Edit Quotation in Document Canvas"
-                      >
-                        <Edit3 size={13} style={{ color: 'var(--primary)' }} /> Edit
-                      </button>
-
-                      {/* Delete Action */}
+                      </td>
+                      <td>
+                        <div>
+                          <strong style={{ color: 'var(--text-heading)', fontSize: 13.5 }}>
+                            {q.customClientHeading || q.client?.company || q.lead?.company || q.client?.name || q.lead?.name || 'Valued Prospect'}
+                          </strong>
+                          {(q.client?.email || q.lead?.email) && (
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              {q.client?.email || q.lead?.email}
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       {isAdminOrManager && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: 'var(--red)', padding: '4px 6px' }}
-                          onClick={() => handleDelete(q._id, q.quotationNo)}
-                          title="Delete Quotation"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
+                              {q.createdBy?.name || 'Admin'}
+                            </span>
+                          </div>
+                        </td>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td>
+                        {(() => {
+                          const tplType = getQuotationTemplateType(q);
+                          const isAds = /social|meta|ads|seo|google/i.test(tplType);
+                          return (
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              whiteSpace: 'nowrap',
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: 6,
+                              background: isAds ? '#EFF6FF' : '#F0FDF4',
+                              color: isAds ? '#1D4ED8' : '#15803D',
+                              border: `1px solid ${isAds ? '#BFDBFE' : '#BBF7D0'}`
+                            }}>
+                              {isAds ? '📣 Social Media & Ads' : '🌐 Web & Software'}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>
+                        ₹{q.totalAmount?.toLocaleString() || 0}
+                      </td>
+                      <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {new Date(q.validUntil).toLocaleDateString()}
+                      </td>
+                      <td>
+                        {renderStatusBadge(q.status, q.rejectionReason)}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'flex-end' }}>
+                          {/* SuperAdmin Approval Buttons for Pending Quotations */}
+                          {isAdminOrManager && q.status === 'pending_approval' && (
+                            <>
+                              <button
+                                className="btn btn-sm"
+                                style={{ background: '#10B981', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                                onClick={() => handleApprove(q._id)}
+                                title="Approve Quotation"
+                              >
+                                <CheckCircle size={12} /> Approve
+                              </button>
+                              <button
+                                className="btn btn-sm"
+                                style={{ background: '#EF4444', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                                onClick={() => handleReject(q._id)}
+                                title="Reject Quotation"
+                              >
+                                <XCircle size={12} /> Reject
+                              </button>
+                            </>
+                          )}
+
+                          {/* Sales Employee Request Approval Button */}
+                          {!isAdminOrManager && (q.status === 'draft' || q.status === 'rejected_approval') && (
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: '#F59E0B', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, fontSize: 11 }}
+                              onClick={() => handleRequestApproval(q._id)}
+                              title="Submit to SuperAdmin for Approval"
+                            >
+                              <Clock size={12} /> Request Approval
+                            </button>
+                          )}
+
+                          {/* Email Action */}
+                          <button
+                            className="btn btn-sm"
+                            style={{
+                              background: q.status === 'approved' || q.status === 'sent' || isAdminOrManager ? '#016139' : '#94a3b8',
+                              color: '#ffffff',
+                              padding: '4px 8px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontWeight: 600,
+                              cursor: !isAdminOrManager && q.status === 'pending_approval' ? 'not-allowed' : 'pointer'
+                            }}
+                            onClick={() => handleSendEmail(q)}
+                            title={q.status === 'pending_approval' && !isAdminOrManager ? 'Pending SuperAdmin Approval' : 'Send Proposal via Email'}
+                          >
+                            <Send size={12} /> Email
+                          </button>
+
+                          {/* Preview / Download Action */}
+                          <button
+                            className="btn btn-sm"
+                            style={{ background: '#0284C7', color: '#ffffff', padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                            onClick={() => handleOpenPreview(q)}
+                            title="Download / View Proposal Document"
+                          >
+                            <FileText size={13} /> Download / View
+                          </button>
+
+                          {/* Edit Action */}
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                            onClick={() => handleOpenEdit(q)}
+                            title="Edit Quotation in Document Canvas"
+                          >
+                            <Edit3 size={13} style={{ color: 'var(--primary)' }} /> Edit
+                          </button>
+
+                          {/* Delete Action */}
+                          {isAdminOrManager && (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              style={{ color: 'var(--red)', padding: '4px 6px' }}
+                              onClick={() => handleDelete(q._id, q.quotationNo)}
+                              title="Delete Quotation"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={quotationPage}
+              totalPages={Math.ceil(filteredQuotations.length / 7) || 1}
+              totalItems={filteredQuotations.length}
+              itemsPerPage={7}
+              onPageChange={setQuotationPage}
+            />
+          </>
         )}
       </div>
 

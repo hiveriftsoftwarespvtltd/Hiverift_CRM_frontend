@@ -9,6 +9,7 @@ import {
   Code, Megaphone, Briefcase, UserSquare2, Play, Radio, Trash2
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const CATEGORY_COLORS = {
   development: { bg: '#E0F2FE', text: '#0284C7', border: '#BAE6FD' },
@@ -30,6 +31,13 @@ export default function WfhMonitoringPage() {
   const [appsSummary, setAppsSummary] = useState([]);
   const [devicesList, setDevicesList] = useState([]);
   const [reportsList, setReportsList] = useState([]);
+
+  // Pagination States (7 per page)
+  const [livePage, setLivePage] = useState(1);
+  const [appsPage, setAppsPage] = useState(1);
+  const [leaderboardPage, setLeaderboardPage] = useState(1);
+  const [devicePage, setDevicePage] = useState(1);
+  const [reportPage, setReportPage] = useState(1);
   
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -43,6 +51,14 @@ export default function WfhMonitoringPage() {
   // Selected Employee Modal Drilldown
   const [selectedEmpDetail, setSelectedEmpDetail] = useState(null);
   const [empModalLoading, setEmpModalLoading] = useState(false);
+
+  useEffect(() => {
+    setLivePage(1);
+    setAppsPage(1);
+    setLeaderboardPage(1);
+    setDevicePage(1);
+    setReportPage(1);
+  }, [search, deptFilter, activeTab, selectedDate, appViewMode, selectedEmpFilter]);
 
   useEffect(() => {
     fetchData();
@@ -444,177 +460,188 @@ export default function WfhMonitoringPage() {
 
           {/* Live Employees Table */}
           <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: '20%' }}>Employee</th>
-                  <th style={{ width: '10%' }}>Department</th>
-                  <th style={{ width: '11%' }}>Check-in</th>
-                  <th style={{ width: '11%' }}>Live Status</th>
-                  <th style={{ width: '15%' }}>Current Running App</th>
-                  <th style={{ width: '10%' }}>Active Time</th>
-                  <th style={{ width: '9%' }}>Idle Time</th>
-                  <th style={{ width: '10%' }}>Productivity</th>
-                  <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.length === 0 ? (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                      <Laptop size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No WFH Employees Found</div>
-                      <div style={{ fontSize: 13 }}>Employees will appear here once they pair their HiveRift Monitoring Agent.</div>
-                    </td>
+                    <th style={{ width: '20%' }}>Employee</th>
+                    <th style={{ width: '10%' }}>Department</th>
+                    <th style={{ width: '11%' }}>Check-in</th>
+                    <th style={{ width: '11%' }}>Live Status</th>
+                    <th style={{ width: '15%' }}>Current Running App</th>
+                    <th style={{ width: '10%' }}>Active Time</th>
+                    <th style={{ width: '9%' }}>Idle Time</th>
+                    <th style={{ width: '10%' }}>Productivity</th>
+                    <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
                   </tr>
-                ) : (
-                  filteredEmployees.map((emp) => (
-                    <tr key={emp.deviceId}>
-                      <td>
-                        <div
-                          onClick={() => handleOpenEmployeeDetail(emp.employeeId)}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-                          title="Click to view full day activity tracking"
-                        >
-                          <div style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: '50%',
-                            background: 'var(--primary-light)',
-                            color: 'var(--primary)',
-                            fontWeight: 800,
-                            fontSize: 13,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '1px solid #CBD8D3'
-                          }}>
-                            {emp.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--primary)', textDecoration: 'underline' }}>
-                              {emp.name}
-                            </div>
-                            <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{emp.email}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <span style={{
-                          padding: '3px 8px',
-                          background: '#F1F5F9',
-                          border: '1px solid #E2E8F0',
-                          borderRadius: 6,
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          textTransform: 'capitalize',
-                          color: '#475569'
-                        }}>
-                          {emp.department || emp.role}
-                        </span>
-                      </td>
-
-                      <td>
-                        {emp.checkIn ? (
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--primary)' }}>
-                              {new Date(emp.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                              {emp.checkOut ? 'Checked Out' : 'Active Shift'}
-                            </div>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                            Not Checked In
-                          </span>
-                        )}
-                      </td>
-
-                      <td>
-                        {emp.activeBreak ? (
-                          <span className="badge badge-requirement" style={{ gap: 5 }}>
-                            <Coffee size={11} />
-                            On Break
-                          </span>
-                        ) : emp.onlineStatus === 'active' ? (
-                          <span className="badge badge-won" style={{ gap: 5 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
-                            Active
-                          </span>
-                        ) : emp.onlineStatus === 'idle' ? (
-                          <span className="badge badge-requirement" style={{ gap: 5 }}>
-                            <Moon size={11} />
-                            Idle
-                          </span>
-                        ) : (
-                          <span className="badge badge-todo" style={{ gap: 5 }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94A3B8', display: 'inline-block' }} />
-                            Offline
-                          </span>
-                        )}
-                      </td>
-
-                      <td>
-                        <span
-                          style={{
-                            padding: '3px 8px',
-                            background: 'var(--primary-very-light)',
-                            color: 'var(--primary)',
-                            border: '1px solid var(--primary-light)',
-                            borderRadius: 6,
-                            fontSize: 12,
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            maxWidth: 150,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap'
-                          }}
-                          title={emp.windowTitle ? `${emp.currentApp}: ${emp.windowTitle}` : emp.currentApp}
-                        >
-                          {emp.currentApp || 'Desktop'}
-                        </span>
-                      </td>
-
-                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                        {formatMinutes(emp.activeMinutes)}
-                      </td>
-
-                      <td style={{ fontWeight: 600, color: emp.idleMinutes > 30 ? '#DC2626' : 'var(--text-secondary)' }}>
-                        {formatMinutes(emp.idleMinutes)}
-                      </td>
-
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <div style={{ width: 44, height: 6, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
-                            <div style={{
-                              width: `${emp.productivityScore || 0}%`,
-                              height: '100%',
-                              background: (emp.productivityScore || 0) >= 75 ? '#10B981' : (emp.productivityScore || 0) >= 50 ? '#F59E0B' : '#EF4444'
-                            }} />
-                          </div>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-heading)' }}>
-                            {emp.productivityScore || 0}%
-                          </span>
-                        </div>
-                      </td>
-
-                      <td style={{ textAlign: 'right' }}>
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleOpenEmployeeDetail(emp.employeeId)}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 700 }}
-                        >
-                          <Eye size={13} /> View Details
-                        </button>
+                </thead>
+                <tbody>
+                  {filteredEmployees.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                        <Laptop size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No WFH Employees Found</div>
+                        <div style={{ fontSize: 13 }}>Employees will appear here once they pair their HiveRift Monitoring Agent.</div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredEmployees
+                      .slice((livePage - 1) * 7, livePage * 7)
+                      .map((emp) => (
+                      <tr key={emp.deviceId}>
+                        <td>
+                          <div
+                            onClick={() => handleOpenEmployeeDetail(emp.employeeId)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                            title="Click to view full day activity tracking"
+                          >
+                            <div style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: '50%',
+                              background: 'var(--primary-light)',
+                              color: 'var(--primary)',
+                              fontWeight: 800,
+                              fontSize: 13,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              border: '1px solid #CBD8D3'
+                            }}>
+                              {emp.name?.charAt(0)?.toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 13.5, color: 'var(--primary)', textDecoration: 'underline' }}>
+                                {emp.name}
+                              </div>
+                              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{emp.email}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <span style={{
+                            padding: '3px 8px',
+                            background: '#F1F5F9',
+                            border: '1px solid #E2E8F0',
+                            borderRadius: 6,
+                            fontSize: 11.5,
+                            fontWeight: 700,
+                            textTransform: 'capitalize',
+                            color: '#475569'
+                          }}>
+                            {emp.department || emp.role}
+                          </span>
+                        </td>
+
+                        <td>
+                          {emp.checkIn ? (
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--primary)' }}>
+                                {new Date(emp.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                                {emp.checkOut ? 'Checked Out' : 'Active Shift'}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                              Not Checked In
+                            </span>
+                          )}
+                        </td>
+
+                        <td>
+                          {emp.activeBreak ? (
+                            <span className="badge badge-requirement" style={{ gap: 5 }}>
+                              <Coffee size={11} />
+                              On Break
+                            </span>
+                          ) : emp.onlineStatus === 'active' ? (
+                            <span className="badge badge-won" style={{ gap: 5 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />
+                              Active
+                            </span>
+                          ) : emp.onlineStatus === 'idle' ? (
+                            <span className="badge badge-requirement" style={{ gap: 5 }}>
+                              <Moon size={11} />
+                              Idle
+                            </span>
+                          ) : (
+                            <span className="badge badge-todo" style={{ gap: 5 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94A3B8', display: 'inline-block' }} />
+                              Offline
+                            </span>
+                          )}
+                        </td>
+
+                        <td>
+                          <span
+                            style={{
+                              padding: '3px 8px',
+                              background: 'var(--primary-very-light)',
+                              color: 'var(--primary)',
+                              border: '1px solid var(--primary-light)',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              display: 'inline-block',
+                              maxWidth: 150,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title={emp.windowTitle ? `${emp.currentApp}: ${emp.windowTitle}` : emp.currentApp}
+                          >
+                            {emp.currentApp || 'Desktop'}
+                          </span>
+                        </td>
+
+                        <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                          {formatMinutes(emp.activeMinutes)}
+                        </td>
+
+                        <td style={{ fontWeight: 600, color: emp.idleMinutes > 30 ? '#DC2626' : 'var(--text-secondary)' }}>
+                          {formatMinutes(emp.idleMinutes)}
+                        </td>
+
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 44, height: 6, background: '#F1F5F9', borderRadius: 3, overflow: 'hidden' }}>
+                              <div style={{
+                                width: `${emp.productivityScore || 0}%`,
+                                height: '100%',
+                                background: (emp.productivityScore || 0) >= 75 ? '#10B981' : (emp.productivityScore || 0) >= 50 ? '#F59E0B' : '#EF4444'
+                              }} />
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-heading)' }}>
+                              {emp.productivityScore || 0}%
+                            </span>
+                          </div>
+                        </td>
+
+                        <td style={{ textAlign: 'right' }}>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleOpenEmployeeDetail(emp.employeeId)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontWeight: 700 }}
+                          >
+                            <Eye size={13} /> View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={livePage}
+              totalPages={Math.ceil(filteredEmployees.length / 7) || 1}
+              totalItems={filteredEmployees.length}
+              itemsPerPage={7}
+              onPageChange={setLivePage}
+            />
           </div>
         </div>
       )}
@@ -721,204 +748,226 @@ export default function WfhMonitoringPage() {
           {/* VIEW 1: BY EMPLOYEE TABLE */}
           {appViewMode === 'employee' && (
             <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '22%' }}>Employee</th>
-                    <th style={{ width: '12%' }}>Department</th>
-                    <th style={{ width: '20%' }}>Application Name</th>
-                    <th style={{ width: '14%' }}>Process Name</th>
-                    <th style={{ width: '12%' }}>Category</th>
-                    <th style={{ width: '10%' }}>Sessions</th>
-                    <th style={{ width: '14%', textAlign: 'right' }}>Time Spent</th>
-                    <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appsSummary.length === 0 ? (
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                        <Layers size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Application Data Recorded for {selectedDate}</div>
-                        <div style={{ fontSize: 13 }}>Applications stream automatically when employees work on their connected PC.</div>
-                      </td>
+                      <th style={{ width: '22%' }}>Employee</th>
+                      <th style={{ width: '12%' }}>Department</th>
+                      <th style={{ width: '20%' }}>Application Name</th>
+                      <th style={{ width: '14%' }}>Process Name</th>
+                      <th style={{ width: '12%' }}>Category</th>
+                      <th style={{ width: '10%' }}>Sessions</th>
+                      <th style={{ width: '14%', textAlign: 'right' }}>Time Spent</th>
+                      <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
                     </tr>
-                  ) : (
-                    appsSummary.map((item, idx) => {
-                      const catStyle = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other;
-                      return (
-                        <tr key={`${item.employee?._id || idx}-${item.appName}`}>
-                          <td>
-                            <div
-                              onClick={() => handleOpenEmployeeDetail(item.employee?._id, selectedDate)}
-                              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
-                              title="Click to view complete daily tracking"
-                            >
-                              <div style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                background: 'var(--primary-light)',
-                                color: 'var(--primary)',
-                                fontWeight: 800,
-                                fontSize: 12,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                border: '1px solid #CBD8D3'
+                  </thead>
+                  <tbody>
+                    {appsSummary.length === 0 ? (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                          <Layers size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Application Data Recorded for {selectedDate}</div>
+                          <div style={{ fontSize: 13 }}>Applications stream automatically when employees work on their connected PC.</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      appsSummary
+                        .slice((appsPage - 1) * 7, appsPage * 7)
+                        .map((item, idx) => {
+                        const catStyle = CATEGORY_COLORS[item.category] || CATEGORY_COLORS.other;
+                        return (
+                          <tr key={`${item.employee?._id || idx}-${item.appName}`}>
+                            <td>
+                              <div
+                                onClick={() => handleOpenEmployeeDetail(item.employee?._id, selectedDate)}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+                                title="Click to view complete daily tracking"
+                              >
+                                <div style={{
+                                  width: 32,
+                                  height: 32,
+                                  borderRadius: '50%',
+                                  background: 'var(--primary-light)',
+                                  color: 'var(--primary)',
+                                  fontWeight: 800,
+                                  fontSize: 12,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  border: '1px solid #CBD8D3'
+                                }}>
+                                  {item.employee?.name?.charAt(0)?.toUpperCase() || 'E'}
+                                </div>
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--primary)', textDecoration: 'underline' }}>
+                                    {item.employee?.name || 'Unknown Staff'}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                                    {item.employee?.email}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td>
+                              <span style={{
+                                padding: '3px 8px',
+                                background: '#F1F5F9',
+                                border: '1px solid #E2E8F0',
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                textTransform: 'capitalize',
+                                color: '#475569'
                               }}>
-                                {item.employee?.name?.charAt(0)?.toUpperCase() || 'E'}
+                                {item.employee?.department || item.employee?.role || 'N/A'}
+                              </span>
+                            </td>
+
+                            <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                              {item.appName}
+                            </td>
+
+                            <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                              {item.processName}
+                            </td>
+
+                            <td>
+                              <span style={{
+                                padding: '3px 8px',
+                                background: catStyle.bg,
+                                color: catStyle.text,
+                                border: `1px solid ${catStyle.border}`,
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                textTransform: 'capitalize'
+                              }}>
+                                {item.category}
+                              </span>
+                            </td>
+
+                            <td>
+                              <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                                {item.sessionCount} Sessions
+                              </span>
+                            </td>
+
+                            <td style={{ textAlign: 'right' }}>
+                              <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 13.5 }}>
+                                {item.totalHours} hrs
                               </div>
-                              <div>
-                                <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--primary)', textDecoration: 'underline' }}>
-                                  {item.employee?.name || 'Unknown Staff'}
-                                </div>
-                                <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                                  {item.employee?.email}
-                                </div>
+                              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                                ({formatMinutes(item.totalMinutes)})
                               </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          <td>
-                            <span style={{
-                              padding: '3px 8px',
-                              background: '#F1F5F9',
-                              border: '1px solid #E2E8F0',
-                              borderRadius: 6,
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              textTransform: 'capitalize',
-                              color: '#475569'
-                            }}>
-                              {item.employee?.department || item.employee?.role || 'N/A'}
-                            </span>
-                          </td>
-
-                          <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                            {item.appName}
-                          </td>
-
-                          <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
-                            {item.processName}
-                          </td>
-
-                          <td>
-                            <span style={{
-                              padding: '3px 8px',
-                              background: catStyle.bg,
-                              color: catStyle.text,
-                              border: `1px solid ${catStyle.border}`,
-                              borderRadius: 6,
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              textTransform: 'capitalize'
-                            }}>
-                              {item.category}
-                            </span>
-                          </td>
-
-                          <td>
-                            <span style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                              {item.sessionCount} Sessions
-                            </span>
-                          </td>
-
-                          <td style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 13.5 }}>
-                              {item.totalHours} hrs
-                            </div>
-                            <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                              ({formatMinutes(item.totalMinutes)})
-                            </div>
-                          </td>
-
-                          <td style={{ textAlign: 'right' }}>
-                            <button
-                              className="btn btn-sm btn-secondary"
-                              onClick={() => handleOpenEmployeeDetail(item.employee?._id, selectedDate)}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
-                              title="Preview complete daily timeline"
-                            >
-                              <Eye size={12} /> Timeline
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                            <td style={{ textAlign: 'right' }}>
+                              <button
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => handleOpenEmployeeDetail(item.employee?._id, selectedDate)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
+                                title="Preview complete daily timeline"
+                              >
+                                <Eye size={12} /> Timeline
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={appsPage}
+                totalPages={Math.ceil(appsSummary.length / 7) || 1}
+                totalItems={appsSummary.length}
+                itemsPerPage={7}
+                onPageChange={setAppsPage}
+              />
             </div>
           )}
 
           {/* VIEW 2: COMPANY LEADERBOARD TABLE */}
           {appViewMode === 'leaderboard' && (
             <div className="table-wrapper">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th style={{ width: '8%' }}>Rank</th>
-                    <th style={{ width: '24%' }}>Application Name</th>
-                    <th style={{ width: '18%' }}>Process Name</th>
-                    <th style={{ width: '16%' }}>Category</th>
-                    <th style={{ width: '14%' }}>Active Users</th>
-                    <th style={{ width: '14%' }}>Total Sessions</th>
-                    <th style={{ width: '16%', textAlign: 'right' }}>Total Monitored Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {appsSummary.length === 0 ? (
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                        <Layers size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Application Data Recorded Yet</div>
-                        <div style={{ fontSize: 13 }}>Application sessions stream automatically from connected desktop agents.</div>
-                      </td>
+                      <th style={{ width: '8%' }}>Rank</th>
+                      <th style={{ width: '24%' }}>Application Name</th>
+                      <th style={{ width: '18%' }}>Process Name</th>
+                      <th style={{ width: '16%' }}>Category</th>
+                      <th style={{ width: '14%' }}>Active Users</th>
+                      <th style={{ width: '14%' }}>Total Sessions</th>
+                      <th style={{ width: '16%', textAlign: 'right' }}>Total Monitored Time</th>
                     </tr>
-                  ) : (
-                    appsSummary.map((app, idx) => {
-                      const catStyle = CATEGORY_COLORS[app.category] || CATEGORY_COLORS.other;
-                      return (
-                        <tr key={app.appName}>
-                          <td style={{ fontWeight: 800, color: idx < 3 ? 'var(--primary)' : 'var(--text-secondary)' }}>
-                            #{idx + 1}
-                          </td>
-                          <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                            {app.appName}
-                          </td>
-                          <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
-                            {app.processName}
-                          </td>
-                          <td>
-                            <span style={{
-                              padding: '3px 8px',
-                              background: catStyle.bg,
-                              color: catStyle.text,
-                              border: `1px solid ${catStyle.border}`,
-                              borderRadius: 6,
-                              fontSize: 11.5,
-                              fontWeight: 700,
-                              textTransform: 'capitalize'
-                            }}>
-                              {app.category}
-                            </span>
-                          </td>
-                          <td style={{ fontWeight: 700 }}>
-                            {app.usersCount} Staff
-                          </td>
-                          <td>
-                            {app.sessionCount} Sessions
-                          </td>
-                          <td style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 14, textAlign: 'right' }}>
-                            {app.totalHours} hrs <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>({formatMinutes(app.totalMinutes)})</span>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {appsSummary.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                          <Layers size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Application Data Recorded Yet</div>
+                          <div style={{ fontSize: 13 }}>Application sessions stream automatically from connected desktop agents.</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      appsSummary
+                        .slice((leaderboardPage - 1) * 7, leaderboardPage * 7)
+                        .map((app, idx) => {
+                        const catStyle = CATEGORY_COLORS[app.category] || CATEGORY_COLORS.other;
+                        return (
+                          <tr key={app.appName}>
+                            <td style={{ fontWeight: 800, color: idx < 3 ? 'var(--primary)' : 'var(--text-secondary)' }}>
+                              #{(leaderboardPage - 1) * 7 + idx + 1}
+                            </td>
+                            <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                              {app.appName}
+                            </td>
+                            <td style={{ fontFamily: 'monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                              {app.processName}
+                            </td>
+                            <td>
+                              <span style={{
+                                padding: '3px 8px',
+                                background: catStyle.bg,
+                                color: catStyle.text,
+                                border: `1px solid ${catStyle.border}`,
+                                borderRadius: 6,
+                                fontSize: 11.5,
+                                fontWeight: 700,
+                                textTransform: 'capitalize'
+                              }}>
+                                {app.category}
+                              </span>
+                            </td>
+                            <td style={{ fontWeight: 700 }}>
+                              {app.usersCount} Staff
+                            </td>
+                            <td>
+                              {app.sessionCount} Sessions
+                            </td>
+                            <td style={{ fontWeight: 800, color: 'var(--primary)', fontSize: 14, textAlign: 'right' }}>
+                              {app.totalHours} hrs <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>({formatMinutes(app.totalMinutes)})</span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={leaderboardPage}
+                totalPages={Math.ceil(appsSummary.length / 7) || 1}
+                totalItems={appsSummary.length}
+                itemsPerPage={7}
+                onPageChange={setLeaderboardPage}
+              />
             </div>
           )}
         </div>
@@ -945,90 +994,101 @@ export default function WfhMonitoringPage() {
           </div>
 
           <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: '16%' }}>Device ID</th>
-                  <th style={{ width: '16%' }}>Computer Name</th>
-                  <th style={{ width: '16%' }}>Operating System</th>
-                  <th style={{ width: '18%' }}>Paired Employee</th>
-                  <th style={{ width: '10%' }}>Agent Build</th>
-                  <th style={{ width: '12%' }}>Device Status</th>
-                  <th style={{ width: '14%' }}>Last Ping</th>
-                  <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {devicesList.length === 0 ? (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
                   <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                      <HardDrive size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Devices Paired Yet</div>
-                      <div style={{ fontSize: 13 }}>Devices register when employees install the monitoring agent.</div>
-                    </td>
+                    <th style={{ width: '16%' }}>Device ID</th>
+                    <th style={{ width: '16%' }}>Computer Name</th>
+                    <th style={{ width: '16%' }}>Operating System</th>
+                    <th style={{ width: '18%' }}>Paired Employee</th>
+                    <th style={{ width: '10%' }}>Agent Build</th>
+                    <th style={{ width: '12%' }}>Device Status</th>
+                    <th style={{ width: '14%' }}>Last Ping</th>
+                    <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
                   </tr>
-                ) : (
-                  devicesList.map((dev) => (
-                    <tr key={dev._id || dev.deviceId}>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>
-                        {dev.deviceId}
-                      </td>
-                      <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                        {dev.deviceName || 'Windows PC'}
-                      </td>
-                      <td style={{ fontSize: 12.5, color: 'var(--text-body)' }}>
-                        {dev.os || 'Windows'}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-heading)' }}>{dev.employee?.name || 'N/A'}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{dev.employee?.department || dev.employee?.role}</div>
-                      </td>
-                      <td>
-                        <span style={{ background: '#F1F5F9', padding: '3px 8px', borderRadius: 4, fontSize: 11.5, fontWeight: 700, color: '#475569' }}>
-                          v{dev.agentVersion || '1.0.0'}
-                        </span>
-                      </td>
-                      <td>
-                        {dev.status === 'connected' ? (
-                          <span className="badge badge-won">Active</span>
-                        ) : dev.status === 'revoked' ? (
-                          <span className="badge badge-lost">Revoked</span>
-                        ) : (
-                          <span className="badge badge-todo">Disconnected</span>
-                        )}
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                        {dev.lastHeartbeat ? new Date(dev.lastHeartbeat).toLocaleString() : 'Never'}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                          {dev.status !== 'revoked' && (
-                            <button
-                              onClick={() => handleRevokeDevice(dev.deviceId)}
-                              className="btn btn-sm btn-secondary"
-                              style={{ fontWeight: 700, color: '#D97706', borderColor: '#FDE68A' }}
-                              title="Revoke active pairing token & disconnect"
-                            >
-                              Revoke
-                            </button>
-                          )}
-                          {isAdmin && (
-                            <button
-                              onClick={() => handleDeleteDevicePermanently(dev.deviceId)}
-                              className="btn btn-sm btn-danger"
-                              style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                              title="Delete device record permanently"
-                            >
-                              <Trash2 size={13} /> Delete
-                            </button>
-                          )}
-                        </div>
+                </thead>
+                <tbody>
+                  {devicesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                        <HardDrive size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Devices Paired Yet</div>
+                        <div style={{ fontSize: 13 }}>Devices register when employees install the monitoring agent.</div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    devicesList
+                      .slice((devicePage - 1) * 7, devicePage * 7)
+                      .map((dev) => (
+                      <tr key={dev._id || dev.deviceId}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>
+                          {dev.deviceId}
+                        </td>
+                        <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                          {dev.deviceName || 'Windows PC'}
+                        </td>
+                        <td style={{ fontSize: 12.5, color: 'var(--text-body)' }}>
+                          {dev.os || 'Windows'}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-heading)' }}>{dev.employee?.name || 'N/A'}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--text-secondary)' }}>{dev.employee?.department || dev.employee?.role}</div>
+                        </td>
+                        <td>
+                          <span style={{ background: '#F1F5F9', padding: '3px 8px', borderRadius: 4, fontSize: 11.5, fontWeight: 700, color: '#475569' }}>
+                            v{dev.agentVersion || '1.0.0'}
+                          </span>
+                        </td>
+                        <td>
+                          {dev.status === 'connected' ? (
+                            <span className="badge badge-won">Active</span>
+                          ) : dev.status === 'revoked' ? (
+                            <span className="badge badge-lost">Revoked</span>
+                          ) : (
+                            <span className="badge badge-todo">Disconnected</span>
+                          )}
+                        </td>
+                        <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {dev.lastHeartbeat ? new Date(dev.lastHeartbeat).toLocaleString() : 'Never'}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                            {dev.status !== 'revoked' && (
+                              <button
+                                onClick={() => handleRevokeDevice(dev.deviceId)}
+                                className="btn btn-sm btn-secondary"
+                                style={{ fontWeight: 700, color: '#D97706', borderColor: '#FDE68A' }}
+                                title="Revoke active pairing token & disconnect"
+                              >
+                                Revoke
+                              </button>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleDeleteDevicePermanently(dev.deviceId)}
+                                className="btn btn-sm btn-danger"
+                                style={{ fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                title="Delete device record permanently"
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={devicePage}
+              totalPages={Math.ceil(devicesList.length / 7) || 1}
+              totalItems={devicesList.length}
+              itemsPerPage={7}
+              onPageChange={setDevicePage}
+            />
           </div>
         </div>
       )}
@@ -1079,92 +1139,103 @@ export default function WfhMonitoringPage() {
           </div>
 
           <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: '18%' }}>Employee</th>
-                  <th style={{ width: '11%' }}>Department</th>
-                  <th style={{ width: '10%' }}>Date</th>
-                  <th style={{ width: '12%' }}>Active Work Time</th>
-                  <th style={{ width: '10%' }}>Idle Time</th>
-                  <th style={{ width: '10%' }}>Break Taken</th>
-                  <th style={{ width: '10%' }}>Productivity</th>
-                  <th style={{ width: '13%' }}>Primary App</th>
-                  <th style={{ width: '16%', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reportsList.length === 0 ? (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
                   <tr>
-                    <td colSpan={9} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                      <BarChart3 size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
-                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Reports Found for {selectedDate}</div>
-                    </td>
+                    <th style={{ width: '18%' }}>Employee</th>
+                    <th style={{ width: '11%' }}>Department</th>
+                    <th style={{ width: '10%' }}>Date</th>
+                    <th style={{ width: '12%' }}>Active Work Time</th>
+                    <th style={{ width: '10%' }}>Idle Time</th>
+                    <th style={{ width: '10%' }}>Break Taken</th>
+                    <th style={{ width: '10%' }}>Productivity</th>
+                    <th style={{ width: '13%' }}>Primary App</th>
+                    <th style={{ width: '16%', textAlign: 'right' }}>Actions</th>
                   </tr>
-                ) : (
-                  reportsList.map((r) => (
-                    <tr key={r._id}>
-                      <td>
-                        <div
-                          onClick={() => handleOpenEmployeeDetail(r.employee?._id || r.employee, r.date)}
-                          style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
-                          title="Click to preview employee activity breakdown"
-                        >
-                          {r.employee?.name || 'N/A'}
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{ padding: '3px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11.5, fontWeight: 700, color: '#475569' }}>
-                          {r.employee?.department || r.employee?.role || 'N/A'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: 13, color: 'var(--text-body)' }}>
-                        {r.date}
-                      </td>
-                      <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
-                        {formatMinutes(r.totalActiveMinutes)}
-                      </td>
-                      <td style={{ fontWeight: 600, color: r.totalIdleMinutes > 30 ? '#DC2626' : 'var(--text-secondary)' }}>
-                        {formatMinutes(r.totalIdleMinutes)}
-                      </td>
-                      <td>
-                        {formatMinutes(r.totalBreakMinutes)}
-                      </td>
-                      <td>
-                        <span className={`badge ${(r.productivityScore || 0) >= 75 ? 'badge-won' : (r.productivityScore || 0) >= 50 ? 'badge-requirement' : 'badge-lost'}`}>
-                          {r.productivityScore || 0}%
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                        {r.topApplications?.[0]?.appName || 'N/A'}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => handleOpenEmployeeDetail(r.employee?._id || r.employee, r.date)}
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
-                            title="Preview activity breakdown"
-                          >
-                            <Eye size={13} /> Preview
-                          </button>
-                          {isAdmin && (
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() => handleDeleteReport(r._id)}
-                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
-                              title="Delete report record"
-                            >
-                              <Trash2 size={13} /> Delete
-                            </button>
-                          )}
-                        </div>
+                </thead>
+                <tbody>
+                  {reportsList.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                        <BarChart3 size={36} style={{ margin: '0 auto 12px', opacity: 0.4 }} />
+                        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-heading)' }}>No Reports Found for {selectedDate}</div>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    reportsList
+                      .slice((reportPage - 1) * 7, reportPage * 7)
+                      .map((r) => (
+                      <tr key={r._id}>
+                        <td>
+                          <div
+                            onClick={() => handleOpenEmployeeDetail(r.employee?._id || r.employee, r.date)}
+                            style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer', textDecoration: 'underline' }}
+                            title="Click to preview employee activity breakdown"
+                          >
+                            {r.employee?.name || 'N/A'}
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ padding: '3px 8px', background: '#F1F5F9', borderRadius: 6, fontSize: 11.5, fontWeight: 700, color: '#475569' }}>
+                            {r.employee?.department || r.employee?.role || 'N/A'}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: 13, color: 'var(--text-body)' }}>
+                          {r.date}
+                        </td>
+                        <td style={{ fontWeight: 800, color: 'var(--primary)' }}>
+                          {formatMinutes(r.totalActiveMinutes)}
+                        </td>
+                        <td style={{ fontWeight: 600, color: r.totalIdleMinutes > 30 ? '#DC2626' : 'var(--text-secondary)' }}>
+                          {formatMinutes(r.totalIdleMinutes)}
+                        </td>
+                        <td>
+                          {formatMinutes(r.totalBreakMinutes)}
+                        </td>
+                        <td>
+                          <span className={`badge ${(r.productivityScore || 0) >= 75 ? 'badge-won' : (r.productivityScore || 0) >= 50 ? 'badge-requirement' : 'badge-lost'}`}>
+                            {r.productivityScore || 0}%
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                          {r.topApplications?.[0]?.appName || 'N/A'}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => handleOpenEmployeeDetail(r.employee?._id || r.employee, r.date)}
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
+                              title="Preview activity breakdown"
+                            >
+                              <Eye size={13} /> Preview
+                            </button>
+                            {isAdmin && (
+                              <button
+                                className="btn btn-sm btn-danger"
+                                onClick={() => handleDeleteReport(r._id)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700 }}
+                                title="Delete report record"
+                              >
+                                <Trash2 size={13} /> Delete
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={reportPage}
+              totalPages={Math.ceil(reportsList.length / 7) || 1}
+              totalItems={reportsList.length}
+              itemsPerPage={7}
+              onPageChange={setReportPage}
+            />
           </div>
         </div>
       )}

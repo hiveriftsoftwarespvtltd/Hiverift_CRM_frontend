@@ -1,5 +1,18 @@
 import React from 'react';
-import { X, Printer, Download } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
+
+const getInvoicePDFTitle = (invoiceNo) => {
+  const now = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const YYYY = now.getFullYear();
+  const MM = pad(now.getMonth() + 1);
+  const DD = pad(now.getDate());
+  const HH = pad(now.getHours());
+  const Min = pad(now.getMinutes());
+  const SS = pad(now.getSeconds());
+  const cleanInv = invoiceNo ? invoiceNo.replace(/[^a-zA-Z0-9_-]/g, '') : 'Draft';
+  return `HiveRift-Portal-Invoice-${cleanInv}-${YYYY}-${MM}-${DD}-${HH}-${Min}-${SS}`;
+};
 
 export default function InvoicePrintView({ invoice, onClose }) {
   if (!invoice) return null;
@@ -13,8 +26,17 @@ export default function InvoicePrintView({ invoice, onClose }) {
     : 'Due on Receipt';
 
   const handlePrint = () => {
+    const prevTitle = document.title;
+    document.title = getInvoicePDFTitle(invoice.invoiceNo);
     window.print();
+    setTimeout(() => {
+      document.title = prevTitle;
+    }, 1000);
   };
+
+  const defaultNotes = 'Notes: Thank you for choosing HiveRift Softwares Pvt Ltd. We appreciate your business and look forward to continuing our association.';
+  const displayNotes = invoice.notes?.trim() || defaultNotes;
+  const displayTerms = invoice.terms?.trim() || 'Payment is due upon receipt of this invoice. Please make the payment to the official bank account mentioned below.';
 
   return (
     <div
@@ -112,64 +134,70 @@ export default function InvoicePrintView({ invoice, onClose }) {
           fontFamily: 'Inter, system-ui, sans-serif',
         }}
       >
-        {/* Header: Logo + Title */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
-          <div>
+        {/* Header: Logo + Company Name & Title */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <img
               src={invoice.logo || '/logo.png'}
-              alt="Company Logo"
+              alt="HiveRift Logo"
               style={{ maxHeight: 65, maxWidth: 190, objectFit: 'contain' }}
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = '/logo.png';
               }}
             />
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: '#016139', letterSpacing: '0.5px' }}>HiveRift</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#475569' }}>HiveRift Softwares Pvt Ltd</div>
+            </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <h1 style={{ fontSize: 30, fontWeight: 900, color: '#0f172a', letterSpacing: '1px', margin: 0 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#0f172a', letterSpacing: '1px', margin: 0 }}>
               HIVERIFT INVOICE
             </h1>
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#016139', marginTop: 4 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#016139', marginTop: 4 }}>
               # {invoice.invoiceNo}
             </div>
           </div>
         </div>
 
         {/* Sender & Recipient & Metadata Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 28 }}>
           <div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
                 From:
               </div>
               <div style={{ fontSize: 13, color: '#1e293b', whiteSpace: 'pre-line', lineHeight: 1.5, fontWeight: 500 }}>
-                {invoice.from || 'HiveRift Softwares Pvt Ltd'}
+                {invoice.from || `HiveRift Softwares Pvt Ltd\nGSTIN: XXXXXXXXXXXXXXX\ninfo@hiverift.com\n+91 9667106291`}
               </div>
             </div>
 
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
-                Bill To:
-              </div>
-              <div style={{ fontSize: 13, color: '#0f172a', whiteSpace: 'pre-line', lineHeight: 1.5, fontWeight: 700 }}>
-                {invoice.billTo}
-              </div>
-              {invoice.shipTo && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>
-                    Ship To:
-                  </div>
-                  <div style={{ fontSize: 12, color: '#475569', whiteSpace: 'pre-line' }}>{invoice.shipTo}</div>
+            {invoice.billTo?.trim() && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 }}>
+                  Bill To:
                 </div>
-              )}
-            </div>
+                <div style={{ fontSize: 13, color: '#0f172a', whiteSpace: 'pre-line', lineHeight: 1.5, fontWeight: 700 }}>
+                  {invoice.billTo.trim()}
+                </div>
+                {invoice.shipTo?.trim() && (
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', marginBottom: 2 }}>
+                      Ship To:
+                    </div>
+                    <div style={{ fontSize: 12, color: '#475569', whiteSpace: 'pre-line' }}>{invoice.shipTo.trim()}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Meta Column */}
           <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '16px', fontSize: 12, display: 'flex', flexDirection: 'column', gap: 10, height: 'fit-content' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#64748b', fontWeight: 600 }}>Date:</span>
+              <span style={{ color: '#64748b', fontWeight: 600 }}>Invoice Date:</span>
               <strong style={{ color: '#0f172a' }}>{formattedDate}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -183,14 +211,14 @@ export default function InvoicePrintView({ invoice, onClose }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 28 }}>
           <thead>
             <tr style={{ background: '#0f172a', color: '#ffffff' }}>
-              <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, textAlign: 'left', borderRadius: '6px 0 0 6px' }}>Item</th>
+              <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, textAlign: 'left', borderRadius: '6px 0 0 6px' }}>Item / Service Details</th>
               <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, textAlign: 'center', width: 90 }}>Quantity</th>
               <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, textAlign: 'right', width: 120 }}>Rate</th>
               <th style={{ padding: '11px 14px', fontSize: 12, fontWeight: 800, textAlign: 'right', width: 130, borderRadius: '0 6px 6px 0' }}>Amount</th>
             </tr>
           </thead>
           <tbody>
-            {(invoice.items || []).map((it, idx) => (
+            {(invoice.items || []).filter((it) => it.description?.trim()).map((it, idx) => (
               <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9', background: idx % 2 === 0 ? '#ffffff' : '#fcfcfd' }}>
                 <td style={{ padding: '12px 14px', fontSize: 13, color: '#1e293b', fontWeight: 500 }}>{it.description}</td>
                 <td style={{ padding: '12px 14px', fontSize: 13, color: '#475569', textAlign: 'center' }}>{it.quantity}</td>
@@ -208,16 +236,17 @@ export default function InvoicePrintView({ invoice, onClose }) {
         {/* Bottom Section: Notes & Calculations */}
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 32, marginBottom: 28 }}>
           <div>
-            {invoice.notes && (
+            {displayTerms && (
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#334155', marginBottom: 4 }}>Notes:</div>
-                <div style={{ fontSize: 12, color: '#64748b', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{invoice.notes}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#334155', marginBottom: 4 }}>Terms & Conditions:</div>
+                <div style={{ fontSize: 11.5, color: '#475569', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{displayTerms}</div>
               </div>
             )}
-            {invoice.terms && (
+
+            {displayNotes && (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#334155', marginBottom: 4 }}>Terms & Conditions:</div>
-                <div style={{ fontSize: 11, color: '#64748b', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{invoice.terms}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#334155', marginBottom: 4 }}>Notes:</div>
+                <div style={{ fontSize: 11.5, color: '#475569', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{displayNotes}</div>
               </div>
             )}
           </div>
@@ -261,21 +290,22 @@ export default function InvoicePrintView({ invoice, onClose }) {
           </div>
         </div>
 
-        {/* Bank Details Box */}
-        <div style={{ background: '#0f172a', borderRadius: 8, padding: '16px 20px', color: '#ffffff', fontSize: 12 }}>
+        {/* Official Bank Account Details Box */}
+        <div style={{ background: '#0f172a', borderRadius: 8, padding: '16px 20px', color: '#ffffff', fontSize: 12, marginBottom: 20 }}>
           <div style={{ color: '#38bdf8', fontWeight: 800, fontSize: 13, marginBottom: 8 }}>
-            Official Bank Account for Remittance:
+            Official Bank Account Details
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, color: '#cbd5e1' }}>
             <div>Account Holder: <strong style={{ color: '#ffffff' }}>HiveRift Software's Pvt Ltd</strong></div>
-            <div>Account Number: <strong style={{ color: '#ffffff' }}>755605000722</strong></div>
+            <div>Account Number: <strong style={{ color: '#ffffff' }}>75560500722</strong></div>
             <div>IFSC Code: <strong style={{ color: '#ffffff' }}>ICIC0007556 (ICICI Bank)</strong></div>
             <div>Corporate UPI: <strong style={{ color: '#38bdf8' }}>MSHIVERIFTSOFTWARESPVTLTD.eazypay@icici</strong></div>
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: '#94a3b8' }}>
-          HiveRift Softwares Pvt. Ltd. • www.hiverift.com • support@hiverift.com
+        {/* Designed by HiveRift Softwares Branding Mark */}
+        <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 12, borderTop: '1px solid #e2e8f0', fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+          Designed by HiveRift Softwares
         </div>
       </div>
 

@@ -116,6 +116,9 @@ export const attendanceAPI = {
   delete: (id) => api.delete(`/attendance/${id}`),
   getTodaySummary: () => api.get('/attendance/today-summary'),
   getMonthlyReport: (params) => api.get('/attendance/monthly-report', { params }),
+  updateOvertime: (id, data) => api.put(`/attendance/${id}/overtime`, data),
+  editTime: (id, data) => api.put(`/attendance/${id}/edit-time`, data),
+  resetRecord: (id) => api.delete(`/attendance/${id}/reset-record`),
 };
 
 // Leaves

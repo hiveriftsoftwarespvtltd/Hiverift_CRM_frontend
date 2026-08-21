@@ -3,6 +3,7 @@ import { usersAPI } from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Plus, Search, Edit2, Trash2, X, UserPlus, Users, Crown, Star, ShieldCheck, UserCheck, Key, Eye, EyeOff } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const ROLES = [
   { value: 'admin', label: 'SUPER ADMIN (Full Access)', color: 'badge-purple' },
@@ -21,6 +22,11 @@ export default function EmployeesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('All');
+  const [empPage, setEmpPage] = useState(1);
+
+  useEffect(() => {
+    setEmpPage(1);
+  }, [search, departmentFilter]);
 
   // Modal State
   const [showModal, setShowModal] = useState(false);
@@ -330,216 +336,227 @@ export default function EmployeesPage() {
 
         {/* Table */}
         <div className="table-wrapper">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>EMPLOYEE & POSITION</th>
-                <th>ROLE & HIERARCHY</th>
-                <th>DEPARTMENT</th>
-                <th>REPORTS TO</th>
-                <th>STATUS</th>
-                <th>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px 0' }}>
-                    <div className="loading-spinner" style={{ margin: '0 auto' }} />
-                  </td>
+                  <th>EMPLOYEE & POSITION</th>
+                  <th>ROLE & HIERARCHY</th>
+                  <th>DEPARTMENT</th>
+                  <th>REPORTS TO</th>
+                  <th>STATUS</th>
+                  <th>ACTIONS</th>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                    No employees found matching your criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map((u) => {
-                  const isSuperAdmin = u.role === 'admin';
-                  const isDeptAdmin = u.isDepartmentHead;
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px 0' }}>
+                      <div className="loading-spinner" style={{ margin: '0 auto' }} />
+                    </td>
+                  </tr>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                      No employees found matching your criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers
+                    .slice((empPage - 1) * 7, empPage * 7)
+                    .map((u) => {
+                    const isSuperAdmin = u.role === 'admin';
+                    const isDeptAdmin = u.isDepartmentHead;
 
-                  return (
-                    <tr key={u._id} style={{ background: isSuperAdmin ? '#F0FDF4' : isDeptAdmin ? '#FEFCE8' : 'transparent' }}>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <div
-                            style={{
-                              width: 38,
-                              height: 38,
-                              borderRadius: '50%',
-                              background: isSuperAdmin ? '#014D3B' : isDeptAdmin ? '#F59E0B' : 'var(--primary-light)',
-                              color: isSuperAdmin || isDeptAdmin ? '#ffffff' : 'var(--primary)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 800,
-                              fontSize: 14,
-                              flexShrink: 0
-                            }}
-                          >
-                            {isSuperAdmin ? <Crown size={18} /> : isDeptAdmin ? <Star size={18} /> : u.name?.charAt(0)}
-                          </div>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <span style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14.5 }}>
-                                {u.name}
-                              </span>
-                              {isSuperAdmin && (
-                                <span style={{ fontSize: 10, background: '#014D3B', color: '#ffffff', padding: '1px 6px', borderRadius: 4, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                  SUPER ADMIN <Crown size={10} />
-                                </span>
-                              )}
-                              {!isSuperAdmin && isDeptAdmin && (
-                                <span style={{ fontSize: 10, background: '#F59E0B', color: '#ffffff', padding: '1px 6px', borderRadius: 4, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                  {u.department?.toUpperCase() || 'DEPT'} ADMIN <Star size={10} fill="#ffffff" />
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{u.email}</div>
-                            {u.designation && (
-                              <div style={{ fontSize: 11.5, color: '#016139', fontWeight: 600, marginTop: 2 }}>
-                                {u.designation}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                          <span className={`badge ${isSuperAdmin ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'uppercase', fontWeight: 700, width: 'fit-content' }}>
-                            {u.role}
-                          </span>
-                          <span style={{ fontSize: 11, color: isSuperAdmin ? '#016139' : isDeptAdmin ? '#B45309' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            {isSuperAdmin ? (
-                              <><Crown size={11} /> Full System Controller</>
-                            ) : isDeptAdmin ? (
-                              <><Star size={11} fill="#B45309" /> Department Head / Sub-Admin</>
-                            ) : (
-                              <><Users size={11} /> Team Member</>
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--text-heading)', fontSize: 13.5, fontWeight: 600 }}>
-                        {u.department || 'General'}
-                      </td>
-                      <td>
-                        {isSuperAdmin ? (
-                          <span style={{ fontSize: 12, color: '#016139', fontWeight: 700 }}>Top Level (None)</span>
-                        ) : u.reportingTo ? (
-                          <div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)' }}>
-                              {u.reportingTo.name}
-                            </div>
-                            <div style={{ fontSize: 11, color: '#64748b' }}>
-                              {u.reportingTo.designation || u.reportingTo.role}
-                            </div>
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Direct (Super Admin)</span>
-                        )}
-                      </td>
-                      <td>
-                        <span
-                          className="badge"
-                          style={{
-                            background: u.isActive ? '#E9F8F1' : '#FFF0F0',
-                            color: u.isActive ? '#10B981' : '#EF4444',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {u.isActive ? 'ACTIVE' : 'INACTIVE'}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {/* Toggle Department Lead / Sub-Admin (Admin only) */}
-                          {currentUser?.role === 'admin' && !isSuperAdmin && (
-                            <button
-                              onClick={() => toggleDepartmentHead(u)}
+                    return (
+                      <tr key={u._id} style={{ background: isSuperAdmin ? '#F0FDF4' : isDeptAdmin ? '#FEFCE8' : 'transparent' }}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div
                               style={{
-                                padding: '4px 8px',
-                                borderRadius: 6,
-                                fontSize: 11.5,
-                                fontWeight: 700,
-                                background: isDeptAdmin ? '#FEF3C7' : '#F1F5F9',
-                                border: `1px solid ${isDeptAdmin ? '#FCD34D' : '#CBD5E1'}`,
-                                color: isDeptAdmin ? '#92400E' : '#475569',
-                                cursor: 'pointer',
+                                width: 38,
+                                height: 38,
+                                borderRadius: '50%',
+                                background: isSuperAdmin ? '#014D3B' : isDeptAdmin ? '#F59E0B' : 'var(--primary-light)',
+                                color: isSuperAdmin || isDeptAdmin ? '#ffffff' : 'var(--primary)',
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: 4
-                              }}
-                              title={isDeptAdmin ? 'Remove Dept Admin Status' : 'Promote to Dept Admin'}
-                            >
-                              <Star size={13} fill={isDeptAdmin ? '#F59E0B' : 'none'} color={isDeptAdmin ? '#F59E0B' : '#64748B'} />
-                              {isDeptAdmin ? 'Dept Admin' : 'Make Admin'}
-                            </button>
-                          )}
-
-                          {/* Deactivate / Activate */}
-                          {(currentUser?.role === 'admin' || currentUser?.role === 'hr' || currentUser?.role === 'management') && (
-                            <button
-                              onClick={() => toggleActive(u)}
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: 6,
-                                fontSize: 11.5,
-                                fontWeight: 600,
-                                background: 'transparent',
-                                border: '1px solid #CBD8D3',
-                                color: 'var(--text-body)',
-                                cursor: 'pointer',
+                                justifyContent: 'center',
+                                fontWeight: 800,
+                                fontSize: 14,
+                                flexShrink: 0
                               }}
                             >
-                              {u.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
+                              {isSuperAdmin ? <Crown size={18} /> : isDeptAdmin ? <Star size={18} /> : u.name?.charAt(0)}
+                            </div>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14.5 }}>
+                                  {u.name}
+                                </span>
+                                {isSuperAdmin && (
+                                  <span style={{ fontSize: 10, background: '#014D3B', color: '#ffffff', padding: '1px 6px', borderRadius: 4, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    SUPER ADMIN <Crown size={10} />
+                                  </span>
+                                )}
+                                {!isSuperAdmin && isDeptAdmin && (
+                                  <span style={{ fontSize: 10, background: '#F59E0B', color: '#ffffff', padding: '1px 6px', borderRadius: 4, fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    {u.department?.toUpperCase() || 'DEPT'} ADMIN <Star size={10} fill="#ffffff" />
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{u.email}</div>
+                              {u.designation && (
+                                <div style={{ fontSize: 11.5, color: '#016139', fontWeight: 600, marginTop: 2 }}>
+                                  {u.designation}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <span className={`badge ${isSuperAdmin ? 'badge-purple' : 'badge-blue'}`} style={{ textTransform: 'uppercase', fontWeight: 700, width: 'fit-content' }}>
+                              {u.role}
+                            </span>
+                            <span style={{ fontSize: 11, color: isSuperAdmin ? '#016139' : isDeptAdmin ? '#B45309' : 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {isSuperAdmin ? (
+                                <><Crown size={11} /> Full System Controller</>
+                              ) : isDeptAdmin ? (
+                                <><Star size={11} fill="#B45309" /> Department Head / Sub-Admin</>
+                              ) : (
+                                <><Users size={11} /> Team Member</>
+                              )}
+                            </span>
+                          </div>
+                        </td>
+                        <td style={{ color: 'var(--text-heading)', fontSize: 13.5, fontWeight: 600 }}>
+                          {u.department || 'General'}
+                        </td>
+                        <td>
+                          {isSuperAdmin ? (
+                            <span style={{ fontSize: 12, color: '#016139', fontWeight: 700 }}>Top Level (None)</span>
+                          ) : u.reportingTo ? (
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-heading)' }}>
+                                {u.reportingTo.name}
+                              </div>
+                              <div style={{ fontSize: 11, color: '#64748b' }}>
+                                {u.reportingTo.designation || u.reportingTo.role}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Direct (Super Admin)</span>
                           )}
+                        </td>
+                        <td>
+                          <span
+                            className="badge"
+                            style={{
+                              background: u.isActive ? '#E9F8F1' : '#FFF0F0',
+                              color: u.isActive ? '#10B981' : '#EF4444',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {u.isActive ? 'ACTIVE' : 'INACTIVE'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            {/* Toggle Department Lead / Sub-Admin (Admin only) */}
+                            {currentUser?.role === 'admin' && !isSuperAdmin && (
+                              <button
+                                onClick={() => toggleDepartmentHead(u)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: 6,
+                                  fontSize: 11.5,
+                                  fontWeight: 700,
+                                  background: isDeptAdmin ? '#FEF3C7' : '#F1F5F9',
+                                  border: `1px solid ${isDeptAdmin ? '#FCD34D' : '#CBD5E1'}`,
+                                  color: isDeptAdmin ? '#92400E' : '#475569',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 4
+                                }}
+                                title={isDeptAdmin ? 'Remove Dept Admin Status' : 'Promote to Dept Admin'}
+                              >
+                                <Star size={13} fill={isDeptAdmin ? '#F59E0B' : 'none'} color={isDeptAdmin ? '#F59E0B' : '#64748B'} />
+                                {isDeptAdmin ? 'Dept Admin' : 'Make Admin'}
+                              </button>
+                            )}
 
-                          {/* Reset Password */}
-                          {currentUser?.role === 'admin' && (
-                            <button
-                              onClick={() => handleResetPassword(u)}
-                              className="btn btn-ghost btn-sm"
-                              style={{ padding: '4px 6px', color: '#D97706' }}
-                              title="Reset Login Password"
-                            >
-                              <Key size={15} />
-                            </button>
-                          )}
+                            {/* Deactivate / Activate */}
+                            {(currentUser?.role === 'admin' || currentUser?.role === 'hr' || currentUser?.role === 'management') && (
+                              <button
+                                onClick={() => toggleActive(u)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  fontSize: 11.5,
+                                  fontWeight: 600,
+                                  background: 'transparent',
+                                  border: '1px solid #CBD8D3',
+                                  color: 'var(--text-body)',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {u.isActive ? 'Deactivate' : 'Activate'}
+                              </button>
+                            )}
 
-                          {/* Edit */}
-                          {(currentUser?.role === 'admin' || currentUser?.role === 'hr') && (
-                            <button
-                              onClick={() => openEditModal(u)}
-                              className="btn btn-ghost btn-sm"
-                              style={{ padding: '4px 6px' }}
-                              title="Edit Details & Manager"
-                            >
-                              <Edit2 size={15} color="var(--primary)" />
-                            </button>
-                          )}
+                            {/* Reset Password */}
+                            {currentUser?.role === 'admin' && (
+                              <button
+                                onClick={() => handleResetPassword(u)}
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '4px 6px', color: '#D97706' }}
+                                title="Reset Login Password"
+                              >
+                                <Key size={15} />
+                              </button>
+                            )}
 
-                          {/* Delete */}
-                          {currentUser?.role === 'admin' && u._id !== currentUser._id && (
-                            <button
-                              onClick={() => handleDelete(u._id, u.name)}
-                              className="btn btn-ghost btn-sm"
-                              style={{ color: 'var(--red)', padding: '4px 6px' }}
-                              title="Delete Employee"
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                            {/* Edit */}
+                            {(currentUser?.role === 'admin' || currentUser?.role === 'hr') && (
+                              <button
+                                onClick={() => openEditModal(u)}
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '4px 6px' }}
+                                title="Edit Details & Manager"
+                              >
+                                <Edit2 size={15} color="var(--primary)" />
+                              </button>
+                            )}
+
+                            {/* Delete */}
+                            {currentUser?.role === 'admin' && u._id !== currentUser._id && (
+                              <button
+                                onClick={() => handleDelete(u._id, u.name)}
+                                className="btn btn-ghost btn-sm"
+                                style={{ color: 'var(--red)', padding: '4px 6px' }}
+                                title="Delete Employee"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+          <PaginationControls
+            currentPage={empPage}
+            totalPages={Math.ceil(filteredUsers.length / 7) || 1}
+            totalItems={filteredUsers.length}
+            itemsPerPage={7}
+            onPageChange={setEmpPage}
+          />
         </div>
       </div>
 

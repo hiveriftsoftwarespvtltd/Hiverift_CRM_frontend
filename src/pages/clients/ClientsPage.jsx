@@ -3,6 +3,7 @@ import { clientsAPI, leadsAPI } from '../../api';
 import { UserCheck, Search, Plus, Eye, Edit3, Phone, Mail, Building, Trash2, FolderKanban, FileText, CreditCard, ShieldCheck, Sparkles, CheckCircle, Info } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 export default function ClientsPage() {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export default function ClientsPage() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [clientPage, setClientPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [selectedLeadId, setSelectedLeadId] = useState('');
@@ -22,6 +24,7 @@ export default function ClientsPage() {
   useEffect(() => {
     fetchClients();
     fetchLeads();
+    setClientPage(1);
   }, [search]);
 
   useEffect(() => {
@@ -239,79 +242,92 @@ export default function ClientsPage() {
             <p>Clients are automatically created when deals are won, or can be added manually above.</p>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Client ID</th>
-                <th>Client / Enterprise</th>
-                <th>Contact Details</th>
-                <th>Location</th>
-                <th>Account Status</th>
-                <th>Quick Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map(c => (
-                <tr key={c._id} onClick={() => navigate(`/clients/${c._id}`)} style={{ cursor: 'pointer' }}>
-                  <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <ShieldCheck size={16} /> {c.clientId}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>{c.name}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                      <Building size={12} /> {c.company || 'Individual Client'}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                      <Phone size={12} /> {c.phone}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      <Mail size={12} /> {c.email || 'No email provided'}
-                    </div>
-                  </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                    {c.city || c.address || 'India'}
-                  </td>
-                  <td>
-                    <span className={`badge ${c.status === 'active' ? 'badge-won' : 'badge-lost'}`}>
-                      {c.status ? c.status.toUpperCase() : 'ACTIVE'}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={() => navigate(`/clients/${c._id}`)}
-                        title="360° View Account"
-                      >
-                        <Eye size={14} />
-                      </button>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 8px', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
-                        onClick={() => navigate(`/quotations?client=${c._id}`)}
-                        title="Generate Quote for Client"
-                      >
-                        <FileText size={13} /> Quote
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ color: 'var(--red)', padding: '4px 6px' }}
-                        onClick={e => handleDelete(c._id, c.name, e)}
-                        title="Delete Client"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Client ID</th>
+                    <th>Client / Enterprise</th>
+                    <th>Contact Details</th>
+                    <th>Location</th>
+                    <th>Account Status</th>
+                    <th>Quick Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clients
+                    .slice((clientPage - 1) * 7, clientPage * 7)
+                    .map(c => (
+                    <tr key={c._id} onClick={() => navigate(`/clients/${c._id}`)} style={{ cursor: 'pointer' }}>
+                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <ShieldCheck size={16} /> {c.clientId}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: 'var(--text-heading)', fontSize: 14 }}>{c.name}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          <Building size={12} /> {c.company || 'Individual Client'}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                          <Phone size={12} /> {c.phone}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          <Mail size={12} /> {c.email || 'No email provided'}
+                        </div>
+                      </td>
+                      <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                        {c.city || c.address || 'India'}
+                      </td>
+                      <td>
+                        <span className={`badge ${c.status === 'active' ? 'badge-won' : 'badge-lost'}`}>
+                          {c.status ? c.status.toUpperCase() : 'ACTIVE'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            onClick={() => navigate(`/clients/${c._id}`)}
+                            title="360° View Account"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                            onClick={() => navigate(`/quotations?client=${c._id}`)}
+                            title="Generate Quote for Client"
+                          >
+                            <FileText size={13} /> Quote
+                          </button>
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--red)', padding: '4px 6px' }}
+                            onClick={e => handleDelete(c._id, c.name, e)}
+                            title="Delete Client"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={clientPage}
+              totalPages={Math.ceil(clients.length / 7) || 1}
+              totalItems={clients.length}
+              itemsPerPage={7}
+              onPageChange={setClientPage}
+            />
+          </>
         )}
       </div>
 

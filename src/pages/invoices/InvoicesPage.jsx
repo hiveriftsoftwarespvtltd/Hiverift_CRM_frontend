@@ -7,6 +7,7 @@ import { invoicesAPI, clientsAPI } from '../../api';
 import InvoiceEditorModal from './InvoiceEditorModal';
 import InvoicePrintView from './InvoicePrintView';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const INVOICE_STATUS_TABS = [
   { id: 'all', label: 'All Invoices' },
@@ -24,6 +25,11 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [invoicePage, setInvoicePage] = useState(1);
+
+  useEffect(() => {
+    setInvoicePage(1);
+  }, [search, statusFilter]);
 
   // Modals
   const [editorOpen, setEditorOpen] = useState(false);
@@ -272,104 +278,117 @@ export default function InvoicesPage() {
             </button>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Invoice No</th>
-                <th>Bill To / Client</th>
-                <th>Invoice Date</th>
-                <th>Due Date</th>
-                <th>Total Amount (₹)</th>
-                <th>Paid (₹)</th>
-                <th>Balance Due (₹)</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {invoices.map((inv) => {
-                const curr = inv.currency || '₹';
-                return (
-                  <tr key={inv._id}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--primary)' }}>
-                        <FileText size={15} /> #{inv.invoiceNo}
-                      </div>
-                      {inv.poNumber && (
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>PO: {inv.poNumber}</div>
-                      )}
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-heading)', fontSize: 13, maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {inv.billTo?.split('\n')[0] || 'Unknown Recipient'}
-                      </div>
-                      {inv.client?.company && (
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Building size={11} /> {inv.client.company}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                      {inv.date ? new Date(inv.date).toLocaleDateString() : '-'}
-                    </td>
-                    <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                      {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'Due on Receipt'}
-                    </td>
-                    <td style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-heading)' }}>
-                      {curr}{Number(inv.total || 0).toLocaleString()}
-                    </td>
-                    <td style={{ fontWeight: 600, fontSize: 13, color: '#166534' }}>
-                      {curr}{Number(inv.amountPaid || 0).toLocaleString()}
-                    </td>
-                    <td style={{ fontWeight: 800, fontSize: 13, color: (inv.balanceDue || 0) > 0 ? '#D97706' : '#016139' }}>
-                      {curr}{Number(inv.balanceDue || 0).toLocaleString()}
-                    </td>
-                    <td>{getStatusBadge(inv.status)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <button
-                          type="button"
-                          onClick={() => setPrintInvoice(inv)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '4px 8px' }}
-                          title="Print / Save PDF"
-                        >
-                          <Printer size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEmailModal(inv)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '4px 8px', color: '#2563EB' }}
-                          title="Email Invoice to Client"
-                        >
-                          <Mail size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(inv)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '4px 8px' }}
-                          title="Edit Invoice"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(inv)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '4px 8px', color: '#EF4444' }}
-                          title="Delete Invoice"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Bill To / Client</th>
+                    <th>Invoice Date</th>
+                    <th>Due Date</th>
+                    <th>Total Amount (₹)</th>
+                    <th>Paid (₹)</th>
+                    <th>Balance Due (₹)</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {invoices
+                    .slice((invoicePage - 1) * 7, invoicePage * 7)
+                    .map((inv) => {
+                    const curr = inv.currency || '₹';
+                    return (
+                      <tr key={inv._id}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, color: 'var(--primary)' }}>
+                            <FileText size={15} /> #{inv.invoiceNo}
+                          </div>
+                          {inv.poNumber && (
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>PO: {inv.poNumber}</div>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-heading)', fontSize: 13, maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {inv.billTo?.split('\n')[0] || 'Unknown Recipient'}
+                          </div>
+                          {inv.client?.company && (
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Building size={11} /> {inv.client.company}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {inv.date ? new Date(inv.date).toLocaleDateString() : '-'}
+                        </td>
+                        <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                          {inv.dueDate ? new Date(inv.dueDate).toLocaleDateString() : 'Due on Receipt'}
+                        </td>
+                        <td style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-heading)' }}>
+                          {curr}{Number(inv.total || 0).toLocaleString()}
+                        </td>
+                        <td style={{ fontWeight: 600, fontSize: 13, color: '#166534' }}>
+                          {curr}{Number(inv.amountPaid || 0).toLocaleString()}
+                        </td>
+                        <td style={{ fontWeight: 800, fontSize: 13, color: (inv.balanceDue || 0) > 0 ? '#D97706' : '#016139' }}>
+                          {curr}{Number(inv.balanceDue || 0).toLocaleString()}
+                        </td>
+                        <td>{getStatusBadge(inv.status)}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                            <button
+                              type="button"
+                              onClick={() => setPrintInvoice(inv)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px' }}
+                              title="Print / Save PDF"
+                            >
+                              <Printer size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEmailModal(inv)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', color: '#2563EB' }}
+                              title="Email Invoice to Client"
+                            >
+                              <Mail size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEdit(inv)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px' }}
+                              title="Edit Invoice"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(inv)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', color: '#EF4444' }}
+                              title="Delete Invoice"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={invoicePage}
+              totalPages={Math.ceil(invoices.length / 7) || 1}
+              totalItems={invoices.length}
+              itemsPerPage={7}
+              onPageChange={setInvoicePage}
+            />
+          </>
         )}
       </div>
 

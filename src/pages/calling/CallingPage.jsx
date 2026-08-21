@@ -42,6 +42,8 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import PaginationControls from '../../components/common/PaginationControls';
+
 const SUB_FILTERS = [
   { key: 'all', label: 'ALL NUMBERS', Icon: Layers },
   { key: 'pending', label: 'PENDING (FRESH)', Icon: Zap },
@@ -63,6 +65,11 @@ export default function CallingPage() {
   const [subFilter, setSubFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [contactPage, setContactPage] = useState(1);
+
+  useEffect(() => {
+    setContactPage(1);
+  }, [search, subFilter, mainTab]);
 
   // Dynamic Data States
   const [contacts, setContacts] = useState([]);
@@ -880,172 +887,183 @@ export default function CallingPage() {
               </p>
             </div>
           ) : (
-            <div className="table-responsive">
-              <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ background: '#FAFBFB', borderBottom: '1px solid var(--border)' }}>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>PROSPECT & CAMPAIGN</th>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>PHONE & DIAL</th>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>LOCATION & COMPANY</th>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>CALL STATUS</th>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>FOLLOW-UP / LAST CALL</th>
-                    <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContacts.map((c) => {
-                    const badge = getStatusBadgeStyle(c.callStatus);
-                    const StatusIcon = badge.Icon;
-                    const lastHistory = c.callHistory && c.callHistory.length > 0 ? c.callHistory[c.callHistory.length - 1] : null;
+            <>
+              <div className="table-responsive">
+                <table className="table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ background: '#FAFBFB', borderBottom: '1px solid var(--border)' }}>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>PROSPECT & CAMPAIGN</th>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>PHONE & DIAL</th>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>LOCATION & COMPANY</th>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>CALL STATUS</th>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>FOLLOW-UP / LAST CALL</th>
+                      <th style={{ padding: '14px 20px', fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)' }}>ACTIONS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredContacts
+                      .slice((contactPage - 1) * 7, contactPage * 7)
+                      .map((c) => {
+                      const badge = getStatusBadgeStyle(c.callStatus);
+                      const StatusIcon = badge.Icon;
+                      const lastHistory = c.callHistory && c.callHistory.length > 0 ? c.callHistory[c.callHistory.length - 1] : null;
 
-                    return (
-                      <tr key={c._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        {/* Prospect & Campaign */}
-                        <td style={{ padding: '16px 20px' }}>
-                          <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-heading)' }}>
-                            {c.name || 'Prospect'}
-                          </div>
-                          {c.batchId?.batchNo ? (
-                            <div style={{ fontSize: 11, color: '#016139', fontWeight: 600, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Folder size={11} /> {c.batchId.batchNo} • {c.batchId.title || 'Campaign'}
+                      return (
+                        <tr key={c._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          {/* Prospect & Campaign */}
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-heading)' }}>
+                              {c.name || 'Prospect'}
                             </div>
-                          ) : (
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>Direct Entry</div>
-                          )}
-                        </td>
-
-                        {/* Phone & Direct Dial */}
-                        <td style={{ padding: '16px 20px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <a
-                              href={`tel:${c.phone}`}
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '5px 12px', fontSize: 12.5, fontWeight: 700, borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                              title="Click to dial number"
-                            >
-                              <Phone size={12} /> {c.phone}
-                            </a>
-                            <a
-                              href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                                `Hello ${c.name || ''}, this is regarding IT & Software solutions from HiveRift Softwares.`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="btn btn-ghost btn-sm"
-                              style={{ padding: '4px 8px', color: '#16A34A', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                              title="Send WhatsApp Message"
-                            >
-                              <MessageCircle size={14} /> WhatsApp
-                            </a>
-                          </div>
-                        </td>
-
-                        {/* Location & Company */}
-                        <td style={{ padding: '16px 20px', fontSize: 13 }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{c.city || '—'}</div>
-                          {c.company && (
-                            <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Building2 size={11} /> {c.company}
-                            </div>
-                          )}
-                          {c.requirement && (
-                            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                              {c.requirement}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Call Status Badge */}
-                        <td style={{ padding: '16px 20px' }}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '4px 10px',
-                              borderRadius: 20,
-                              fontSize: 11,
-                              fontWeight: 700,
-                              background: badge.bg,
-                              color: badge.color,
-                              border: `1px solid ${badge.border}`,
-                            }}
-                          >
-                            <StatusIcon size={12} /> {badge.label}
-                          </span>
-                        </td>
-
-                        {/* Follow-up / Last Call Details */}
-                        <td style={{ padding: '16px 20px', fontSize: 12.5 }}>
-                          {c.callbackTime ? (
-                            <div style={{ color: '#EA580C', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Clock size={13} /> {new Date(c.callbackTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
-                            </div>
-                          ) : lastHistory ? (
-                            <div>
-                              <div style={{ color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <Clock size={12} /> Called: {new Date(lastHistory.calledAt).toLocaleDateString()}
+                            {c.batchId?.batchNo ? (
+                              <div style={{ fontSize: 11, color: '#016139', fontWeight: 600, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Folder size={11} /> {c.batchId.batchNo} • {c.batchId.title || 'Campaign'}
                               </div>
-                              {lastHistory.remark && (
-                                <div style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  "{lastHistory.remark}"
+                            ) : (
+                              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>Direct Entry</div>
+                            )}
+                          </td>
+
+                          {/* Phone & Direct Dial */}
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <a
+                                href={`tel:${c.phone}`}
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '5px 12px', fontSize: 12.5, fontWeight: 700, borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                                title="Click to dial number"
+                              >
+                                <Phone size={12} /> {c.phone}
+                              </a>
+                              <a
+                                href={`https://wa.me/${c.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                                  `Hello ${c.name || ''}, this is regarding IT & Software solutions from HiveRift Softwares.`
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-ghost btn-sm"
+                                style={{ padding: '4px 8px', color: '#16A34A', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                title="Send WhatsApp Message"
+                              >
+                                <MessageCircle size={14} /> WhatsApp
+                              </a>
+                            </div>
+                          </td>
+
+                          {/* Location & Company */}
+                          <td style={{ padding: '16px 20px', fontSize: 13 }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{c.city || '—'}</div>
+                            {c.company && (
+                              <div style={{ fontSize: 11.5, color: 'var(--text-secondary)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Building2 size={11} /> {c.company}
+                              </div>
+                            )}
+                            {c.requirement && (
+                              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                                {c.requirement}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Call Status Badge */}
+                          <td style={{ padding: '16px 20px' }}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '4px 10px',
+                                borderRadius: 20,
+                                fontSize: 11,
+                                fontWeight: 700,
+                                background: badge.bg,
+                                color: badge.color,
+                                border: `1px solid ${badge.border}`,
+                              }}
+                            >
+                              <StatusIcon size={12} /> {badge.label}
+                            </span>
+                          </td>
+
+                          {/* Follow-up / Last Call Details */}
+                          <td style={{ padding: '16px 20px', fontSize: 12.5 }}>
+                            {c.callbackTime ? (
+                              <div style={{ color: '#EA580C', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Clock size={13} /> {new Date(c.callbackTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                              </div>
+                            ) : lastHistory ? (
+                              <div>
+                                <div style={{ color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <Clock size={12} /> Called: {new Date(lastHistory.calledAt).toLocaleDateString()}
                                 </div>
+                                {lastHistory.remark && (
+                                  <div style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 180, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    "{lastHistory.remark}"
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Fresh (Not called yet)</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td style={{ padding: '16px 20px' }}>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                style={{ borderRadius: 6, fontSize: 12, fontWeight: 700, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
+                                onClick={() => openLogModal(c)}
+                              >
+                                <FileText size={13} /> Log Call
+                              </button>
+
+                              {c.callStatus === 'interested' && !c.isConvertedToLead && (
+                                <button
+                                  className="btn btn-sm"
+                                  style={{ borderRadius: 6, fontSize: 12, fontWeight: 700, background: '#10B981', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px' }}
+                                  onClick={() => convertToLead(c)}
+                                >
+                                  <Target size={13} /> Convert Lead
+                                </button>
+                              )}
+
+                              {c.callHistory?.length > 0 && (
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '5px 8px', fontSize: 11, fontWeight: 600, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}
+                                  title="View Call History Logs"
+                                  onClick={() => setHistoryModalContact(c)}
+                                >
+                                  <History size={12} /> ({c.callHistory.length})
+                                </button>
+                              )}
+
+                              {isManagerOrAdmin && (
+                                <button
+                                  onClick={() => handleDeleteContact(c)}
+                                  style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4 }}
+                                  title="Delete Contact"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               )}
                             </div>
-                          ) : (
-                            <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Fresh (Not called yet)</span>
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td style={{ padding: '16px 20px' }}>
-                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <button
-                              className="btn btn-primary btn-sm"
-                              style={{ borderRadius: 6, fontSize: 12, fontWeight: 700, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 5 }}
-                              onClick={() => openLogModal(c)}
-                            >
-                              <FileText size={13} /> Log Call
-                            </button>
-
-                            {c.callStatus === 'interested' && !c.isConvertedToLead && (
-                              <button
-                                className="btn btn-sm"
-                                style={{ borderRadius: 6, fontSize: 12, fontWeight: 700, background: '#10B981', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: 4, padding: '5px 12px' }}
-                                onClick={() => convertToLead(c)}
-                              >
-                                <Target size={13} /> Convert Lead
-                              </button>
-                            )}
-
-                            {c.callHistory?.length > 0 && (
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: '5px 8px', fontSize: 11, fontWeight: 600, borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4 }}
-                                title="View Call History Logs"
-                                onClick={() => setHistoryModalContact(c)}
-                              >
-                                <History size={12} /> ({c.callHistory.length})
-                              </button>
-                            )}
-
-                            {isManagerOrAdmin && (
-                              <button
-                                onClick={() => handleDeleteContact(c)}
-                                style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', padding: 4 }}
-                                title="Delete Contact"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={contactPage}
+                totalPages={Math.ceil(filteredContacts.length / 7) || 1}
+                totalItems={filteredContacts.length}
+                itemsPerPage={7}
+                onPageChange={setContactPage}
+              />
+            </>
           )}
         </div>
       )}

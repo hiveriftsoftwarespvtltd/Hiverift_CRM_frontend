@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { leavesAPI, usersAPI } from '../../api';
 import { FileCheck, Plus, Check, X, ShieldCheck, UserCheck, Lock } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const LEAVE_STATUS_TABS = ['all', 'pending', 'approved', 'rejected'];
 
@@ -13,7 +14,12 @@ export default function LeavesPage() {
   const [adminUser, setAdminUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('all');
+  const [leavePage, setLeavePage] = useState(1);
   const [showModal, setShowModal] = useState(false);
+
+  useEffect(() => {
+    setLeavePage(1);
+  }, [statusTab]);
 
   const isSuperAdmin = user?.role === 'admin';
   const isManagerOrHR = user?.role === 'management' || user?.role === 'hr';
@@ -224,196 +230,209 @@ export default function LeavesPage() {
             </button>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                {isManagementOrHR && <th>Employee</th>}
-                <th>Leave Type</th>
-                <th>From Date</th>
-                <th>To Date</th>
-                <th>Duration</th>
-                <th>Reason</th>
-                <th>Status</th>
-                <th>Approving Authority</th>
-                {isManagementOrHR ? <th>Actions</th> : <th>Reviewed By</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {leaves.map(l => {
-                const canApprove = canUserApproveRow(l);
-                const isOwnLeave = (l.employee?._id || l.employee) === user?._id;
-                const isManagementApplicant = ['management', 'hr'].includes(l.employee?.role);
-
-                return (
-                  <tr key={l._id}>
-                    {isManagementOrHR && (
-                      <td>
-                        <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                          {l.employee?.name || 'N/A'} {isOwnLeave && <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700 }}>(You)</span>}
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                          {l.employee?.designation || l.employee?.department || 'Staff'} • {l.employee?.email}
-                        </div>
-                      </td>
-                    )}
-                    <td>
-                      <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--primary)', fontWeight: 600 }}>
-                        {l.type.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>{new Date(l.fromDate).toLocaleDateString()}</td>
-                    <td>{new Date(l.toDate).toLocaleDateString()}</td>
-                    <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{l.days} Day(s)</td>
-                    <td style={{ fontSize: 13, maxWidth: 200 }}>
-                      <div>{l.reason}</div>
-                      {l.rejectionReason && (
-                        <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
-                          Reason: {l.rejectionReason}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <span className={`badge badge-${l.status === 'approved' ? 'won' : l.status === 'rejected' ? 'lost' : 'quotation'}`}>
-                        {l.status.toUpperCase()}
-                      </span>
-                    </td>
-
-                    {/* Approving Authority Target */}
-                    <td>
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
-                        <span>
-                          {isManagementApplicant
-                            ? 'Super Admin'
-                            : l.requestedTo?.name || 'All Management & HR'}
-                        </span>
-                      </div>
-                    </td>
-
-                    {/* Actions for HR/Admin vs Reviewed By for Employee */}
-                    {isManagementOrHR ? (
-                      <td>
-                        {l.status === 'pending' ? (
-                          canApprove ? (
-                            <div style={{ display: 'flex', gap: 6 }}>
-                              <button
-                                className="btn btn-primary btn-sm"
-                                style={{ background: '#10B981', padding: '5px 10px' }}
-                                title="Approve Leave"
-                                onClick={() => handleApprove(l._id, l.employee?.name || 'Employee')}
-                              >
-                                <Check size={14} /> Approve
-                              </button>
-                              <button
-                                className="btn btn-danger btn-sm"
-                                style={{ padding: '5px 10px' }}
-                                title="Reject Leave"
-                                onClick={() => handleReject(l._id, l.employee?.name || 'Employee')}
-                              >
-                                <X size={14} /> Reject
-                              </button>
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: 11, color: isOwnLeave ? '#F59E0B' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <Lock size={12} />
-                              {isOwnLeave
-                                ? 'Awaiting Super Admin Approval'
-                                : 'Super Admin Approval Only'}
-                            </span>
-                          )
-                        ) : (
-                          l.status === 'approved' ? (
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                              padding: '4px 10px',
-                              background: '#E9F8F1',
-                              color: '#016139',
-                              border: '1px solid #A3E6C5',
-                              borderRadius: 8,
-                              fontWeight: 700,
-                              fontSize: 12,
-                            }}>
-                              <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
-                              <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
-                            </span>
-                          ) : (
-                            <span style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 5,
-                              padding: '4px 10px',
-                              background: '#FEF2F2',
-                              color: '#DC2626',
-                              border: '1px solid #FECACA',
-                              borderRadius: 8,
-                              fontWeight: 700,
-                              fontSize: 12,
-                            }}>
-                              <X size={13} style={{ color: '#DC2626', strokeWidth: 2.5 }} />
-                              <span>Rejected by {l.approvedBy?.name || 'Super Admin'}</span>
-                            </span>
-                          )
-                        )}
-                      </td>
-                    ) : (
-                      <td>
-                        {l.status === 'approved' ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '4px 10px',
-                            background: '#E9F8F1',
-                            color: '#016139',
-                            border: '1px solid #A3E6C5',
-                            borderRadius: 8,
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}>
-                            <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
-                            <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
-                          </span>
-                        ) : l.status === 'rejected' ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '4px 10px',
-                            background: '#FEF2F2',
-                            color: '#DC2626',
-                            border: '1px solid #FECACA',
-                            borderRadius: 8,
-                            fontWeight: 700,
-                            fontSize: 12,
-                          }}>
-                            <X size={13} style={{ color: '#DC2626', strokeWidth: 2.5 }} />
-                            <span>Rejected by {l.approvedBy?.name || 'Management'}</span>
-                          </span>
-                        ) : (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '4px 10px',
-                            background: '#FFFBEB',
-                            color: '#D97706',
-                            border: '1px solid #FDE68A',
-                            borderRadius: 8,
-                            fontWeight: 600,
-                            fontSize: 12,
-                          }}>
-                            Pending with {l.requestedTo?.name || 'Management'}
-                          </span>
-                        )}
-                      </td>
-                    )}
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    {isManagementOrHR && <th>Employee</th>}
+                    <th>Leave Type</th>
+                    <th>From Date</th>
+                    <th>To Date</th>
+                    <th>Duration</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Approving Authority</th>
+                    {isManagementOrHR ? <th>Actions</th> : <th>Reviewed By</th>}
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {leaves
+                    .slice((leavePage - 1) * 7, leavePage * 7)
+                    .map(l => {
+                    const canApprove = canUserApproveRow(l);
+                    const isOwnLeave = (l.employee?._id || l.employee) === user?._id;
+                    const isManagementApplicant = ['management', 'hr'].includes(l.employee?.role);
+
+                    return (
+                      <tr key={l._id}>
+                        {isManagementOrHR && (
+                          <td>
+                            <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                              {l.employee?.name || 'N/A'} {isOwnLeave && <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 700 }}>(You)</span>}
+                            </div>
+                            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                              {l.employee?.designation || l.employee?.department || 'Staff'} • {l.employee?.email}
+                            </div>
+                          </td>
+                        )}
+                        <td>
+                          <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--primary)', fontWeight: 600 }}>
+                            {l.type.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>{new Date(l.fromDate).toLocaleDateString()}</td>
+                        <td>{new Date(l.toDate).toLocaleDateString()}</td>
+                        <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{l.days} Day(s)</td>
+                        <td style={{ fontSize: 13, maxWidth: 200 }}>
+                          <div>{l.reason}</div>
+                          {l.rejectionReason && (
+                            <div style={{ fontSize: 11, color: 'var(--red)', marginTop: 2 }}>
+                              Reason: {l.rejectionReason}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`badge badge-${l.status === 'approved' ? 'won' : l.status === 'rejected' ? 'lost' : 'quotation'}`}>
+                            {l.status.toUpperCase()}
+                          </span>
+                        </td>
+
+                        {/* Approving Authority Target */}
+                        <td>
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <ShieldCheck size={13} style={{ color: 'var(--primary)' }} />
+                            <span>
+                              {isManagementApplicant
+                                ? 'Super Admin'
+                                : l.requestedTo?.name || 'All Management & HR'}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Actions for HR/Admin vs Reviewed By for Employee */}
+                        {isManagementOrHR ? (
+                          <td>
+                            {l.status === 'pending' ? (
+                              canApprove ? (
+                                <div style={{ display: 'flex', gap: 6 }}>
+                                  <button
+                                    className="btn btn-primary btn-sm"
+                                    style={{ background: '#10B981', padding: '5px 10px' }}
+                                    title="Approve Leave"
+                                    onClick={() => handleApprove(l._id, l.employee?.name || 'Employee')}
+                                  >
+                                    <Check size={14} /> Approve
+                                  </button>
+                                  <button
+                                    className="btn btn-danger btn-sm"
+                                    style={{ padding: '5px 10px' }}
+                                    title="Reject Leave"
+                                    onClick={() => handleReject(l._id, l.employee?.name || 'Employee')}
+                                  >
+                                    <X size={14} /> Reject
+                                  </button>
+                                </div>
+                              ) : (
+                                <span style={{ fontSize: 11, color: isOwnLeave ? '#F59E0B' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <Lock size={12} />
+                                  {isOwnLeave
+                                    ? 'Awaiting Super Admin Approval'
+                                    : 'Super Admin Approval Only'}
+                                </span>
+                              )
+                            ) : (
+                              l.status === 'approved' ? (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '4px 10px',
+                                  background: '#E9F8F1',
+                                  color: '#016139',
+                                  border: '1px solid #A3E6C5',
+                                  borderRadius: 8,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                }}>
+                                  <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
+                                  <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
+                                </span>
+                              ) : (
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 5,
+                                  padding: '4px 10px',
+                                  background: '#FEF2F2',
+                                  color: '#DC2626',
+                                  border: '1px solid #FECACA',
+                                  borderRadius: 8,
+                                  fontWeight: 700,
+                                  fontSize: 12,
+                                }}>
+                                  <X size={13} style={{ color: '#DC2626', strokeWidth: 2.5 }} />
+                                  <span>Rejected by {l.approvedBy?.name || 'Super Admin'}</span>
+                                </span>
+                              )
+                            )}
+                          </td>
+                        ) : (
+                          <td>
+                            {l.status === 'approved' ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '4px 10px',
+                                background: '#E9F8F1',
+                                color: '#016139',
+                                border: '1px solid #A3E6C5',
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 12,
+                              }}>
+                                <Check size={13} style={{ color: '#016139', strokeWidth: 2.5 }} />
+                                <span>Approved by {l.approvedBy?.name || 'Super Admin'}</span>
+                              </span>
+                            ) : l.status === 'rejected' ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '4px 10px',
+                                background: '#FEF2F2',
+                                color: '#DC2626',
+                                border: '1px solid #FECACA',
+                                borderRadius: 8,
+                                fontWeight: 700,
+                                fontSize: 12,
+                              }}>
+                                <X size={13} style={{ color: '#DC2626', strokeWidth: 2.5 }} />
+                                <span>Rejected by {l.approvedBy?.name || 'Management'}</span>
+                              </span>
+                            ) : (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '4px 10px',
+                                background: '#FFFBEB',
+                                color: '#D97706',
+                                border: '1px solid #FDE68A',
+                                borderRadius: 8,
+                                fontWeight: 600,
+                                fontSize: 12,
+                              }}>
+                                Pending with {l.requestedTo?.name || 'Management'}
+                              </span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={leavePage}
+              totalPages={Math.ceil(leaves.length / 7) || 1}
+              totalItems={leaves.length}
+              itemsPerPage={7}
+              onPageChange={setLeavePage}
+            />
+          </>
         )}
       </div>
 

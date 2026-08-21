@@ -694,18 +694,37 @@ export default function ProposalCanvasModal({
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>${quotation ? quotation.quotationNo : 'Quotation'}_${(headerTitle || 'Proposal').replace(/\s+/g, '_')}</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; padding: 24px; font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; color: #212121; }
-  .proposal-sheet-container { max-width: 860px; margin: 0 auto; background: #ffffff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); overflow: hidden; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #198754; padding: 8px 12px; }
-  th { background-color: #e9f7ef; text-align: left; }
+  html, body { margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; color: #212121; -webkit-text-size-adjust: 100%; }
+  body { padding: 24px 12px; display: flex; justify-content: center; }
+  .proposal-sheet-container { width: 100%; max-width: 860px; background: #ffffff; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: hidden; }
+  .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; word-break: break-word; }
+  th, td { border: 1px solid #198754; padding: 8px 12px; vertical-align: top; }
+  th { background-color: #e9f7ef; text-align: left; font-size: 13px; }
+  img { max-width: 100%; height: auto; display: block; }
+  
+  /* Mobile Responsive Media Queries */
+  @media (max-width: 680px) {
+    body { padding: 6px 4px !important; }
+    .proposal-sheet-container { border-radius: 6px !important; box-shadow: none !important; }
+    .company-header-flex { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 12px !important; padding: 16px 12px !important; }
+    .company-legal-info { text-align: center !important; }
+    .proposal-body-padding { padding: 14px 10px !important; }
+    .responsive-grid-2 { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .responsive-grid-3 { grid-template-columns: 1fr !important; gap: 14px !important; }
+    th, td { padding: 6px 8px !important; font-size: 11px !important; }
+    h1, .proposal-main-title { font-size: 16px !important; }
+    h2, .proposal-section-title { font-size: 13.5px !important; }
+  }
+  
   @media print {
-    body { background: #ffffff; padding: 0; }
-    .proposal-sheet-container { box-shadow: none; max-width: 100%; width: 100%; border-radius: 0; }
+    body { background: #ffffff !important; padding: 0 !important; }
+    .proposal-sheet-container { box-shadow: none !important; max-width: 100% !important; width: 100% !important; border-radius: 0 !important; }
+    .table-responsive { overflow: visible !important; }
   }
 </style>
 </head>
@@ -1026,7 +1045,7 @@ export default function ProposalCanvasModal({
             <div style={{ height: 8, background: '#198754' }} />
 
             {/* Company Legal Header */}
-            <div style={{ padding: '24px 36px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1.5px solid #198754' }}>
+            <div className="company-header-flex" style={{ padding: '24px 36px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1.5px solid #198754' }}>
               <div>
                 <img
                   src={HIVERIFT_LOGO_BASE64}
@@ -1034,7 +1053,7 @@ export default function ProposalCanvasModal({
                   style={{ maxHeight: 52, maxWidth: 200, objectFit: 'contain', display: 'block' }}
                 />
               </div>
-              <div style={{ textAlign: 'right', fontSize: 11, color: '#334155', lineHeight: 1.45 }}>
+              <div className="company-legal-info" style={{ textAlign: 'right', fontSize: 11, color: '#334155', lineHeight: 1.45 }}>
                 <strong style={{ fontSize: 12.5, color: '#0f172a', textTransform: 'uppercase', letterSpacing: 0.3 }}>
                   HIVERIFT SOFTWARES PRIVATE LIMITED
                 </strong><br />
@@ -1045,7 +1064,7 @@ export default function ProposalCanvasModal({
             </div>
 
             {/* Document Body Area */}
-            <div style={{ padding: '28px 44px' }}>
+            <div className="proposal-body-padding" style={{ padding: '28px 44px' }}>
 
               {/* Category & Format Selector Bar in Edit Mode */}
               {isEditing && (
@@ -1452,70 +1471,2413 @@ export default function ProposalCanvasModal({
                 </tbody>
               </table>
 
-              {/* 1. EXECUTIVE SUMMARY & OBJECTIVES */}
-              <div style={{ marginBottom: 12 }}>
-                {isEditing ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 5, height: 18, background: '#198754' }} />
-                    <input
-                      type="text"
-                      value={section1Title}
-                      onChange={(e) => setSection1Title(e.target.value)}
-                      placeholder="Section 1 Heading"
+              {/* DYNAMIC TEMPLATE RENDERER */}
+              {templateType === 'custom_web_app' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to design and develop a <strong>custom web application</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>, built around the client's specific business processes, operational requirements and growth objectives.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    Unlike a standard website, the proposed web application can include custom business functionality, user roles, administrative controls, workflows, integrations, automation and scalable architecture according to the approved project scope.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build a secure and scalable web-based business solution that simplifies operations, centralizes information and supports the client's specific business workflows.
+                  </div>
+
+                  {/* 2. CORE APPLICATION CAPABILITIES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. CORE APPLICATION CAPABILITIES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Custom Business Functionality</li>
+                    <li>User Roles &amp; Permissions</li>
+                    <li>Admin Dashboard / Admin Panel</li>
+                    <li>Custom Business Workflows</li>
+                    <li>Data Management</li>
+                    <li>Reports &amp; Dashboards</li>
+                    <li>Search, Filters &amp; Data Management</li>
+                    <li>Notifications &amp; Alerts</li>
+                    <li>Third-Party API Integrations</li>
+                    <li>Business Process Automation</li>
+                    <li>Secure Authentication &amp; Authorization</li>
+                    <li>Responsive Web Interface</li>
+                    <li>Database Management</li>
+                    <li>Scalable Application Architecture</li>
+                    <li>Backup &amp; Security Configuration</li>
+                  </ul>
+
+                  {/* 3. CUSTOM BUSINESS FUNCTIONALITY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. CUSTOM BUSINESS FUNCTIONALITY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The application will be designed according to the client's business requirements. Custom modules may include:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Lead / Customer Management</li>
+                    <li>Employee / Staff Management</li>
+                    <li>Vendor Management</li>
+                    <li>Inventory / Product Management</li>
+                    <li>Booking / Appointment Management</li>
+                    <li>Task &amp; Project Management</li>
+                    <li>Document Management</li>
+                    <li>Payment / Transaction Management</li>
+                    <li>Reports &amp; Analytics</li>
+                    <li>Content Management</li>
+                    <li>Other client-specific business modules</li>
+                  </ul>
+
+                  {/* 4. USER ROLES & PERMISSIONS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. USER ROLES & PERMISSIONS
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The application can support multiple user types with role-based access control. Typical roles may include:
+                  </p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>User Role</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Typical Access</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Super Admin</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Complete application and system management</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Business operations, users, records and reports</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Manager</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Assigned modules, approvals, monitoring and reports</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Staff / Employee</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Assigned tasks, records and operational functions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Customer</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Customer-specific services, records, requests and account information</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Vendor / Partner</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Vendor-specific operations and information, where required</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+                    Final roles, permissions and access levels will be defined according to the approved business workflow.
+                  </p>
+
+                  {/* 5. ADMIN PANEL */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. ADMIN PANEL
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    A centralized administration panel can provide control over the application.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Dashboard</li>
+                    <li>User Management</li>
+                    <li>Role &amp; Permission Management</li>
+                    <li>Business Data Management</li>
+                    <li>Module Management</li>
+                    <li>Workflow Management</li>
+                    <li>Reports &amp; Analytics</li>
+                    <li>Notifications</li>
+                    <li>System Settings</li>
+                    <li>Activity / Audit Logs, where required</li>
+                  </ul>
+
+                  {/* 6. BUSINESS WORKFLOWS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. BUSINESS WORKFLOWS
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Custom workflows can be developed according to the client's operational process. Examples include:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Lead Assignment &amp; Follow-Up</li>
+                    <li>Approval Workflows</li>
+                    <li>Task Assignment</li>
+                    <li>Status-Based Processes</li>
+                    <li>Customer Onboarding</li>
+                    <li>Document Approval</li>
+                    <li>Order / Request Processing</li>
+                    <li>Escalation Workflows</li>
+                    <li>Internal Notifications</li>
+                  </ul>
+
+                  {/* 7. INTEGRATIONS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. INTEGRATIONS
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The application can integrate with suitable third-party platforms and APIs according to business requirements.
+                  </p>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Payment Gateways</li>
+                    <li>WhatsApp / WhatsApp API</li>
+                    <li>Email Services</li>
+                    <li>SMS Gateways</li>
+                    <li>CRM Systems</li>
+                    <li>ERP Systems</li>
+                    <li>Accounting Platforms</li>
+                    <li>Google Services / Analytics</li>
+                    <li>Shipping / Logistics APIs</li>
+                    <li>Other Third-Party APIs</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> Third-party subscription, API, transaction or usage charges are separate unless specifically included in the quotation.
+                  </div>
+
+                  {/* 8. AUTOMATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. AUTOMATION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Business processes can be automated to reduce repetitive manual work.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Automated Email Notifications</li>
+                    <li>WhatsApp Notifications, where supported</li>
+                    <li>SMS Notifications, where supported</li>
+                    <li>Task Assignment Automation</li>
+                    <li>Status-Based Notifications</li>
+                    <li>Approval Alerts</li>
+                    <li>Scheduled Reports</li>
+                    <li>Automated Data Processing</li>
+                    <li>Other Approved Business Automations</li>
+                  </ul>
+
+                  {/* 9. SECURITY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. SECURITY
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Secure Login &amp; Authentication</li>
+                    <li>Role-Based Authorization</li>
+                    <li>Password Protection</li>
+                    <li>SSL / HTTPS Configuration</li>
+                    <li>Input Validation</li>
+                    <li>Secure API Communication</li>
+                    <li>Database Security Practices</li>
+                    <li>Session Management</li>
+                    <li>Backup Configuration, where supported</li>
+                    <li>Activity / Audit Logging, where required</li>
+                  </ul>
+
+                  {/* 10. SCALABILITY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. SCALABILITY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The application architecture can be planned to support future business growth and additional functionality.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Additional Users</li>
+                    <li>Additional Modules</li>
+                    <li>Additional Business Locations</li>
+                    <li>Additional Integrations</li>
+                    <li>Expanded Database Requirements</li>
+                    <li>Future Automation</li>
+                    <li>Additional Reports &amp; Dashboards</li>
+                    <li>API Expansion</li>
+                  </ul>
+
+                  {/* 11. APPLICATION DASHBOARDS & REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. APPLICATION DASHBOARDS & REPORTING
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Custom dashboards can be created according to user roles and business requirements.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>KPI Dashboard</li>
+                    <li>Business Summary</li>
+                    <li>Operational Reports</li>
+                    <li>User Activity Reports</li>
+                    <li>Sales / Revenue Reports, where applicable</li>
+                    <li>Lead / Customer Reports</li>
+                    <li>Exportable Reports, where required</li>
+                  </ul>
+
+                  {/* 12. TECHNOLOGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. TECHNOLOGY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The technology stack will be selected according to the application's functionality, security, scalability and business requirements. Possible technologies may include:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>HTML5 / CSS3 / JavaScript</li>
+                    <li>React.js / Next.js</li>
+                    <li>Node.js</li>
+                    <li>PHP / Laravel</li>
+                    <li>MySQL</li>
+                    <li>MongoDB</li>
+                    <li>REST APIs</li>
+                    <li>Other suitable technologies</li>
+                  </ul>
+
+                  {/* 13. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. TIMELINE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Estimated Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Requirement Gathering &amp; Business Analysis</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2–5 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>System Planning &amp; Architecture</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2–4 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>UI/UX Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3–7 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Core Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>10–30+ Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Integrations &amp; Automation</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3–10+ Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Testing &amp; Quality Assurance</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3–7 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Deployment &amp; Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1–3 Days</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 13, color: '#334155', margin: '0 0 20px 0' }}>
+                    <strong>Estimated Timeline:</strong> Final timeline will be confirmed after requirement analysis and approval of the technical scope.
+                  </p>
+
+                  {/* 14. HOSTING & TECHNICAL SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. HOSTING & TECHNICAL SUPPORT
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Inclusion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Application Hosting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Year*</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>SSL</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical Support</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Package</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Bug Fixes</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Agreement</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>*Subject to the selected quotation/package and infrastructure requirements.</p>
+
+                  {/* 15. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'ecommerce_website' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to design and develop a <strong>professional, secure and responsive E-Commerce Website</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The proposed solution will provide the business with a complete online shopping platform where customers can discover products, view product details, add items to cart, place orders, make online payments and receive order-related communication.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build a scalable online store focused on <strong>product discovery, customer experience, secure transactions and online sales.</strong>
+                  </div>
+
+                  {/* 2. E-COMMERCE FEATURES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. E-COMMERCE FEATURES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Professional E-Commerce UI/UX Design</li>
+                    <li>Fully Responsive Website</li>
+                    <li>Mobile, Tablet &amp; Desktop Optimization</li>
+                    <li>Product Catalogue</li>
+                    <li>Product Categories &amp; Sub-Categories</li>
+                    <li>Product Search &amp; Filtering</li>
+                    <li>Product Detail Pages</li>
+                    <li>Product Variations, where required</li>
+                    <li>Shopping Cart</li>
+                    <li>Wishlist, where required</li>
+                    <li>Customer Registration &amp; Login</li>
+                    <li>Guest Checkout, where required</li>
+                    <li>Checkout System</li>
+                    <li>Online Payment Gateway Integration</li>
+                    <li>Order Management</li>
+                    <li>Customer Order History</li>
+                    <li>Coupon / Discount Management</li>
+                    <li>Shipping Configuration</li>
+                    <li>Email Notifications</li>
+                    <li>WhatsApp Integration</li>
+                    <li>Contact / Enquiry Forms</li>
+                    <li>Google Analytics &amp; Search Console</li>
+                    <li>Basic SEO Setup</li>
+                    <li>SSL &amp; Basic Security</li>
+                  </ul>
+
+                  {/* 3. PROPOSED WEBSITE STRUCTURE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. PROPOSED WEBSITE STRUCTURE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Page / Section</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Home</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Brand introduction, featured products, offers and primary shopping CTAs</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>About Us</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Company, brand and business information</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Shop</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Complete product catalogue with categories and filters</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Product Categories</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Organized product browsing by category/sub-category</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Product Detail</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Images, description, price, specifications, variations and purchase options</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Cart</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Review products, quantities and order value</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Checkout</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Customer details, shipping and payment</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>My Account</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Customer profile, addresses and order history</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Wishlist</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Save products for future purchase, if required</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Offers / Deals</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Promotions, discounts and featured campaigns</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Blog</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Articles, updates and SEO content, if required</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>FAQ</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Frequently asked questions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Contact Us</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Contact information, enquiry form, map and communication options</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Policies</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Shipping, returns, refunds, privacy and terms pages</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 4. PRODUCT MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. PRODUCT MANAGEMENT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The store can support structured product management, including:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Product Name</li>
+                    <li>Product Images / Gallery</li>
+                    <li>Product Description</li>
+                    <li>Product Price</li>
+                    <li>Sale Price</li>
+                    <li>SKU / Product Code</li>
+                    <li>Stock Availability</li>
+                    <li>Product Category</li>
+                    <li>Product Attributes</li>
+                    <li>Product Variations</li>
+                    <li>Specifications</li>
+                    <li>Related Products</li>
+                    <li>Featured Products</li>
+                  </ul>
+
+                  {/* 5. SHOPPING CART & CHECKOUT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. SHOPPING CART &amp; CHECKOUT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Add to Cart</li>
+                    <li>Update Quantity</li>
+                    <li>Remove Product</li>
+                    <li>Apply Coupon / Discount</li>
+                    <li>Calculate Subtotal</li>
+                    <li>Shipping Charges</li>
+                    <li>Tax Calculation, where applicable</li>
+                    <li>Order Total</li>
+                    <li>Customer Information</li>
+                    <li>Shipping Address</li>
+                    <li>Billing Information</li>
+                    <li>Payment Selection</li>
+                    <li>Order Confirmation</li>
+                  </ul>
+
+                  {/* 6. PAYMENT GATEWAY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. PAYMENT GATEWAY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The website can be integrated with a suitable payment gateway according to the client's business and operating region.
+                  </p>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Online Payment</li>
+                    <li>UPI Payments</li>
+                    <li>Credit / Debit Cards</li>
+                    <li>Net Banking</li>
+                    <li>Wallets, where supported</li>
+                    <li>Cash on Delivery, where applicable</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> Payment gateway account setup, transaction charges and third-party gateway fees are separate unless specifically included in the quotation.
+                  </div>
+
+                  {/* 7. ORDER MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. ORDER MANAGEMENT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The admin system can provide order management functionality such as:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>View Orders</li>
+                    <li>Order Details</li>
+                    <li>Order Status Management</li>
+                    <li>Payment Status</li>
+                    <li>Customer Details</li>
+                    <li>Shipping Information</li>
+                    <li>Invoice / Order Summary</li>
+                    <li>Order Search &amp; Filtering</li>
+                    <li>Order Notifications</li>
+                  </ul>
+
+                  {/* 8. CUSTOMER ACCOUNT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. CUSTOMER ACCOUNT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Customer Registration</li>
+                    <li>Login / Logout</li>
+                    <li>Forgot Password</li>
+                    <li>Profile Management</li>
+                    <li>Saved Addresses</li>
+                    <li>Order History</li>
+                    <li>Order Status</li>
+                    <li>Wishlist, where applicable</li>
+                  </ul>
+
+                  {/* 9. ADMIN & CONTENT MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. ADMIN &amp; CONTENT MANAGEMENT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Admin Dashboard</li>
+                    <li>Manage Products</li>
+                    <li>Manage Categories</li>
+                    <li>Manage Product Variations</li>
+                    <li>Manage Inventory / Stock, where supported</li>
+                    <li>Manage Orders</li>
+                    <li>Manage Customers</li>
+                    <li>Manage Coupons / Discounts</li>
+                    <li>Manage Banners / Promotions</li>
+                    <li>Manage Testimonials</li>
+                    <li>Manage Blog</li>
+                    <li>Manage Enquiries</li>
+                    <li>Manage Website Content</li>
+                  </ul>
+
+                  {/* 10. SHIPPING & DELIVERY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. SHIPPING &amp; DELIVERY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Shipping functionality can be configured according to the client's business model.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Shipping Zones</li>
+                    <li>Flat-Rate Shipping</li>
+                    <li>Location-Based Shipping</li>
+                    <li>Free Shipping Rules</li>
+                    <li>Order Delivery Information</li>
+                    <li>Shipping Charges</li>
+                    <li>Courier / Logistics Integration, where required</li>
+                  </ul>
+
+                  {/* 11. SEO & PERFORMANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. SEO &amp; PERFORMANCE
+                  </div>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>SEO-Friendly URLs</li>
+                    <li>Meta Titles &amp; Descriptions</li>
+                    <li>Heading Structure</li>
+                    <li>Product SEO Structure</li>
+                    <li>Category SEO Structure</li>
+                    <li>Image ALT Tags</li>
+                    <li>XML Sitemap</li>
+                    <li>Robots.txt</li>
+                    <li>Google Analytics</li>
+                    <li>Google Search Console</li>
+                    <li>Mobile Optimization</li>
+                    <li>Basic Speed Optimization</li>
+                    <li>SSL Configuration</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}><strong>Note:</strong> Ongoing SEO and ranking services are available separately.</p>
+
+                  {/* 12. SECURITY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. SECURITY
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>SSL Configuration</li>
+                    <li>Secure Admin Access</li>
+                    <li>Basic Firewall / Security Protection</li>
+                    <li>Spam Protection</li>
+                    <li>Database Security Practices</li>
+                    <li>Backup Configuration, where supported</li>
+                  </ul>
+
+                  {/* 13. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. TIMELINE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Estimated Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Requirement Gathering &amp; Planning</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Sitemap &amp; Store Structure</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>UI/UX Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2–3 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Website &amp; Store Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>4–7 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Product / Content Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1–3 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Payment &amp; Shipping Configuration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Testing &amp; Quality Assurance</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Final Corrections &amp; Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1 Day</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 13.5, color: '#334155', margin: '0 0 6px 0' }}><strong>Estimated Delivery:</strong> 10–20 Working Days.</p>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>Timeline depends on product volume, integrations, content availability and client approvals. The timeline starts after advance payment and receipt of required materials.</p>
+
+                  {/* 14. HOSTING & SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. HOSTING &amp; SUPPORT
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Inclusion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hosting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Year*</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>SSL</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical Support</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Package</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Bug Fixes</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>30 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Basic Training</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>*Subject to the selected quotation/package.</p>
+
+                  {/* 15. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'it_software_dev' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. provides professional <strong>IT &amp; Software Development solutions</strong> for businesses that require reliable technology solutions, custom software, web applications, mobile applications, business systems and digital platforms.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    Solutions are planned according to the client's business objectives, required functionality, technology requirements, user roles, integrations, security requirements and future scalability.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Deliver a reliable, secure and scalable technology solution that supports the client's business operations and digital growth.
+                  </div>
+
+                  {/* 2. IT & SOFTWARE SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. IT &amp; SOFTWARE SERVICES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Custom Software Development</li>
+                    <li>Web Application Development</li>
+                    <li>Business Management Software</li>
+                    <li>CRM Development</li>
+                    <li>ERP Development</li>
+                    <li>Custom Admin Panels</li>
+                    <li>Customer / Vendor Portals</li>
+                    <li>API Development &amp; Integration</li>
+                    <li>Business Automation</li>
+                    <li>Database Development</li>
+                    <li>Mobile Application Development</li>
+                    <li>Third-Party System Integration</li>
+                    <li>Dashboard &amp; Reporting Solutions</li>
+                    <li>Maintenance &amp; Technical Support</li>
+                  </ul>
+
+                  {/* 3. SOFTWARE DEVELOPMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. SOFTWARE DEVELOPMENT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Software solutions can be developed according to the client's specific business requirements.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Custom Business Software</li>
+                    <li>Internal Business Management Systems</li>
+                    <li>Workflow-Based Applications</li>
+                    <li>Customer Management Systems</li>
+                    <li>Employee / Staff Management Systems</li>
+                    <li>Inventory &amp; Operations Systems</li>
+                    <li>Booking / Appointment Systems</li>
+                    <li>Document Management Systems</li>
+                    <li>Reporting &amp; Analytics Systems</li>
+                    <li>Custom SaaS Platforms</li>
+                  </ul>
+
+                  {/* 4. WEB APPLICATION DEVELOPMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. WEB APPLICATION DEVELOPMENT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Responsive Web Applications</li>
+                    <li>Custom Dashboards</li>
+                    <li>Admin Panels</li>
+                    <li>Customer Portals</li>
+                    <li>Vendor Portals</li>
+                    <li>Employee Portals</li>
+                    <li>Membership Platforms</li>
+                    <li>Booking Platforms</li>
+                    <li>Marketplace Platforms</li>
+                    <li>API-Based Applications</li>
+                  </ul>
+
+                  {/* 5. MOBILE APPLICATION DEVELOPMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. MOBILE APPLICATION DEVELOPMENT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Mobile applications can be developed according to the approved requirements and platform needs.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Android Applications</li>
+                    <li>iOS Applications</li>
+                    <li>Cross-Platform Applications</li>
+                    <li>Customer Applications</li>
+                    <li>Business / Employee Applications</li>
+                    <li>Service / Booking Applications</li>
+                    <li>API-Connected Mobile Applications</li>
+                  </ul>
+
+                  {/* 6. BUSINESS FUNCTIONALITY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. BUSINESS FUNCTIONALITY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The solution can include custom modules such as:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Lead &amp; Customer Management</li>
+                    <li>Sales &amp; Operations Management</li>
+                    <li>Employee Management</li>
+                    <li>Vendor Management</li>
+                    <li>Product / Inventory Management</li>
+                    <li>Task &amp; Project Management</li>
+                    <li>Booking / Appointment Management</li>
+                    <li>Document Management</li>
+                    <li>Payment / Transaction Management</li>
+                    <li>Reports &amp; Analytics</li>
+                    <li>Notifications &amp; Alerts</li>
+                  </ul>
+
+                  {/* 7. USER ROLES & ADMIN PANEL */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. USER ROLES &amp; ADMIN PANEL
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>User Role</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Typical Access</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Super Admin</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Complete system and configuration management</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Business operations, users, records and reports</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Manager</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Assigned modules, approvals and monitoring</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Staff / Employee</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Assigned operational functions and tasks</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Customer</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Customer-specific account, requests and information</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Vendor / Partner</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Vendor-specific operations, where required</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+                    The final roles, permissions and admin functionality will be defined according to the approved scope.
+                  </p>
+
+                  {/* 8. API & THIRD-PARTY INTEGRATIONS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. API &amp; THIRD-PARTY INTEGRATIONS
+                  </div>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Payment Gateways</li>
+                    <li>WhatsApp / WhatsApp API</li>
+                    <li>Email Services</li>
+                    <li>SMS Gateways</li>
+                    <li>CRM Systems</li>
+                    <li>ERP Systems</li>
+                    <li>Accounting Platforms</li>
+                    <li>Google Services / Analytics</li>
+                    <li>Shipping / Logistics APIs</li>
+                    <li>Other Approved APIs</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> Third-party subscription, API, transaction or usage charges are separate unless specifically included in the quotation.
+                  </div>
+
+                  {/* 9. AUTOMATION & WORKFLOWS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. AUTOMATION &amp; WORKFLOWS
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Business Process Automation</li>
+                    <li>Approval Workflows</li>
+                    <li>Task Assignment</li>
+                    <li>Lead Assignment &amp; Follow-Up</li>
+                    <li>Status-Based Notifications</li>
+                    <li>Email Notifications</li>
+                    <li>WhatsApp / SMS Notifications, where supported</li>
+                    <li>Scheduled Reports</li>
+                    <li>Automated Data Processing</li>
+                  </ul>
+
+                  {/* 10. SECURITY & DATA PROTECTION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. SECURITY &amp; DATA PROTECTION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Secure Login &amp; Authentication</li>
+                    <li>Role-Based Authorization</li>
+                    <li>SSL / HTTPS Configuration</li>
+                    <li>Secure API Communication</li>
+                    <li>Input Validation</li>
+                    <li>Database Security Practices</li>
+                    <li>Session Management</li>
+                    <li>Backup Configuration, where supported</li>
+                    <li>Activity / Audit Logs, where required</li>
+                  </ul>
+
+                  {/* 11. DASHBOARDS & REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. DASHBOARDS &amp; REPORTING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Management Dashboard</li>
+                    <li>KPI Dashboard</li>
+                    <li>Operational Reports</li>
+                    <li>Sales / Revenue Reports, where applicable</li>
+                    <li>Lead / Customer Reports</li>
+                    <li>User Activity Reports</li>
+                    <li>Custom Reports</li>
+                    <li>Exportable Reports, where required</li>
+                  </ul>
+
+                  {/* 12. TECHNOLOGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. TECHNOLOGY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The technology stack will be selected according to project requirements. Possible technologies may include:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>HTML5 / CSS3 / JavaScript</li>
+                    <li>React.js / Next.js</li>
+                    <li>Node.js</li>
+                    <li>PHP / Laravel</li>
+                    <li>MySQL</li>
+                    <li>MongoDB</li>
+                    <li>REST APIs</li>
+                    <li>Flutter / React Native</li>
+                    <li>Other suitable technologies</li>
+                  </ul>
+
+                  {/* 13. PROJECT PROCESS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. PROJECT PROCESS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Stage</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1. Requirement Analysis</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Understand business requirements, users, workflows and objectives</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2. Planning</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Define modules, system structure and technical approach</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3. UI/UX Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Create interface designs and user experience flow</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>4. Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Develop approved modules and functionality</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>5. Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Connect APIs, third-party services and required systems</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>6. Testing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Functional, responsive and quality testing</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>7. Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Server deployment, configuration and final setup</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>8. Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Credentials, documentation and basic training, where applicable</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 14. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. TIMELINE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project timeline will depend on the approved scope, number of modules, integrations, design requirements, testing requirements and client approvals.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Estimated Timeline:</strong> Final timeline will be provided after requirement analysis and confirmation of the technical scope.
+                  </div>
+
+                  {/* 15. HOSTING & TECHNICAL SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. HOSTING &amp; TECHNICAL SUPPORT
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Inclusion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hosting / Server</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Year*</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>SSL</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical Support</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Package</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Bug Fixes</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Agreement</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>*Subject to selected infrastructure and quotation.</p>
+
+                  {/* 16. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'landing_page' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to design and develop a <strong>professional, responsive and conversion-focused Landing Page</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The landing page will be designed around a specific business objective such as lead generation, service promotion, product promotion, advertising campaigns, event registration, consultation requests or customer enquiries.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Create a focused digital experience that communicates the offer clearly and encourages visitors to take a specific <strong>Call-to-Action (CTA)</strong>.
+                  </div>
+
+                  {/* 2. KEY FEATURES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. KEY FEATURES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Professional Landing Page UI/UX Design</li>
+                    <li>Fully Responsive Design</li>
+                    <li>Mobile, Tablet &amp; Desktop Optimization</li>
+                    <li>Conversion-Focused Layout</li>
+                    <li>Hero Banner / Main Offer Section</li>
+                    <li>Strong Call-to-Action Sections</li>
+                    <li>Service / Product Presentation</li>
+                    <li>Benefits &amp; Key Features Section</li>
+                    <li>Lead Generation Form</li>
+                    <li>WhatsApp Integration</li>
+                    <li>Click-to-Call Button</li>
+                    <li>Testimonials / Reviews</li>
+                    <li>FAQ Section</li>
+                    <li>Google Maps, where required</li>
+                    <li>Social Media Links</li>
+                    <li>Basic SEO Setup</li>
+                    <li>Google Analytics</li>
+                    <li>Google Search Console</li>
+                    <li>SSL &amp; Basic Security</li>
+                    <li>Basic Speed Optimization</li>
+                  </ul>
+
+                  {/* 3. LANDING PAGE STRUCTURE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. LANDING PAGE STRUCTURE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Section</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hero Section</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Main headline, offer/value proposition and primary CTA</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>About / Introduction</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Brief company, brand, product or service introduction</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Services / Product</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Present the primary offering clearly</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Key Benefits</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Explain why the visitor should choose the offer</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Features / Highlights</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Show important features, inclusions or differentiators</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Portfolio / Results</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Previous work, achievements, case studies or results, where applicable</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Testimonials</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Build trust using customer reviews and feedback</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Offer / Pricing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Display package, pricing or promotional offer, where required</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>FAQ</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Answer common customer questions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Lead Form</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Capture visitor information and requirements</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Final CTA</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Encourage visitors to submit an enquiry, call or contact the business</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 4. LEAD GENERATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. LEAD GENERATION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Lead Capture Forms</li>
+                    <li>Request a Quote</li>
+                    <li>Book a Consultation</li>
+                    <li>Get Started CTA</li>
+                    <li>Call Now Button</li>
+                    <li>WhatsApp Enquiry</li>
+                    <li>Email Enquiry</li>
+                    <li>Campaign-Specific CTAs</li>
+                  </ul>
+
+                  {/* 5. FORM & ENQUIRY MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. FORM &amp; ENQUIRY MANAGEMENT
+                  </div>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Name</li>
+                    <li>Mobile Number</li>
+                    <li>Email Address</li>
+                    <li>Service / Product Required</li>
+                    <li>Location</li>
+                    <li>Message / Requirement</li>
+                    <li>Other campaign-specific fields</li>
+                  </ul>
+                  <p style={{ fontSize: 13, color: '#334155', margin: '0 0 20px 0' }}>
+                    Enquiries can be configured to reach the client's designated email and/or communication channel, subject to the approved setup.
+                  </p>
+
+                  {/* 6. WHATSAPP & COMMUNICATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. WHATSAPP &amp; COMMUNICATION
+                  </div>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Floating WhatsApp Button</li>
+                    <li>Pre-filled WhatsApp Message</li>
+                    <li>Click-to-Call</li>
+                    <li>Email CTA</li>
+                    <li>Social Media Links</li>
+                    <li>Google Maps, where required</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> WhatsApp Business API, SMS, CRM or other third-party service charges are separate unless specifically included in the quotation.
+                  </div>
+
+                  {/* 7. ADVERTISING CAMPAIGN SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. ADVERTISING CAMPAIGN SUPPORT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The landing page can be structured specifically for paid advertising campaigns such as:
+                  </p>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Ads</li>
+                    <li>Facebook / Instagram Ads</li>
+                    <li>LinkedIn Ads</li>
+                    <li>Other approved advertising campaigns</li>
+                  </ul>
+                  <p style={{ fontSize: 13, color: '#334155', margin: '0 0 20px 0' }}>
+                    Campaign-specific landing pages can be created with focused messaging, relevant CTAs and lead forms. Advertising management and advertising budgets are separate services unless included in the quotation.
+                  </p>
+
+                  {/* 8. SEO & PERFORMANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. SEO &amp; PERFORMANCE
+                  </div>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>SEO-Friendly Page Structure</li>
+                    <li>Meta Title</li>
+                    <li>Meta Description</li>
+                    <li>Heading Structure</li>
+                    <li>Image ALT Tags</li>
+                    <li>Mobile Optimization</li>
+                    <li>Basic Speed Optimization</li>
+                    <li>Google Analytics</li>
+                    <li>Google Search Console</li>
+                    <li>SSL Configuration</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}><strong>Note:</strong> Ongoing SEO and ranking services are available separately.</p>
+
+                  {/* 9. TECHNOLOGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. TECHNOLOGY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0' }}>
+                    The landing page technology will be selected according to project requirements and may include HTML5, CSS3, JavaScript, React.js, Next.js, PHP, WordPress or another suitable technology.
+                  </p>
+
+                  {/* 10. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. TIMELINE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Estimated Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Requirement Gathering &amp; Planning</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Content &amp; Page Structure</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>UI/UX Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Form &amp; Integration Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Testing &amp; Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 13.5, color: '#334155', margin: '0 0 6px 0' }}><strong>Estimated Delivery:</strong> 3–7 Working Days.</p>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>Timeline starts after advance payment and receipt of all required content, images and campaign information.</p>
+
+                  {/* 11. HOSTING & SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. HOSTING &amp; SUPPORT
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Inclusion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hosting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Year*</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>SSL</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical Support</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Package</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Bug Fixes</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>30 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Where Applicable</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>*Subject to the selected quotation/package.</p>
+
+                  {/* 12. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'portfolio_website' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to design and develop a professional, responsive and modern <strong>showcase website</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The website will be customized according to the client's business and can be used to showcase products, services, portfolio/projects, achievements, testimonials, gallery and business information.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build a professional digital presence focused on <strong>brand presentation, product/service showcasing and lead generation.</strong>
+                  </div>
+
+                  {/* 2. KEY FEATURES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. KEY FEATURES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Professional UI/UX Design</li>
+                    <li>Fully Responsive Website</li>
+                    <li>Mobile, Tablet &amp; Desktop Optimization</li>
+                    <li>Product Showcase</li>
+                    <li>Service Showcase</li>
+                    <li>Portfolio / Project Showcase</li>
+                    <li>Product &amp; Service Detail Pages</li>
+                    <li>Product Categories, where required</li>
+                    <li>Contact / Enquiry Forms</li>
+                    <li>Product &amp; Service Enquiry</li>
+                    <li>WhatsApp Integration</li>
+                    <li>Click-to-Call</li>
+                    <li>Google Maps</li>
+                    <li>Social Media Integration</li>
+                    <li>Testimonials &amp; Gallery</li>
+                    <li>Basic Blog Section</li>
+                    <li>Basic SEO Setup</li>
+                    <li>Google Analytics &amp; Search Console</li>
+                    <li>SSL &amp; Basic Security</li>
+                    <li>Basic Speed Optimization</li>
+                  </ul>
+
+                  {/* 3. WEBSITE STRUCTURE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. WEBSITE STRUCTURE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The final website structure will be customized according to the client's requirements.
+                  </p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Section</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Purpose</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Home</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Brand introduction, key services/products and primary call-to-actions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>About</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Company, founder, professional or brand information</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Services</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Service categories and detailed service information</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Products</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Product categories and catalogue-style showcase</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Portfolio / Projects</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Completed projects, previous work and case studies</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Testimonials</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Customer reviews and feedback</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Gallery</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Business, product, project and work images</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Blog / Insights</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Articles, updates and SEO content, if required</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>FAQ</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Frequently asked questions, if required</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Contact</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Contact information, enquiry form, map and communication options</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 4. PRODUCT SHOWCASE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. PRODUCT SHOWCASE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    For product-based businesses, the website can display:
+                  </p>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Product Categories</li>
+                    <li>Product Images</li>
+                    <li>Product Description</li>
+                    <li>Features &amp; Specifications</li>
+                    <li>Applications</li>
+                    <li>Product Enquiry</li>
+                    <li>Request a Quote</li>
+                    <li>WhatsApp Enquiry</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> This is a product showcase/catalogue, not an e-commerce store. Online payment, cart, checkout and order management are separate requirements.
+                  </div>
+
+                  {/* 5. SERVICE SHOWCASE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. SERVICE SHOWCASE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    For service-based businesses, the website can display:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Service Categories</li>
+                    <li>Service Details</li>
+                    <li>Features &amp; Benefits</li>
+                    <li>Process / Workflow</li>
+                    <li>Related Projects</li>
+                    <li>Service Enquiry</li>
+                    <li>WhatsApp / Call CTA</li>
+                  </ul>
+
+                  {/* 6. PORTFOLIO / PROJECT SHOWCASE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. PORTFOLIO / PROJECT SHOWCASE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The website can showcase:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Completed Projects</li>
+                    <li>Previous Work</li>
+                    <li>Case Studies</li>
+                    <li>Project Images</li>
+                    <li>Project Details</li>
+                    <li>Client / Location Information</li>
+                    <li>Related Services or Products</li>
+                  </ul>
+
+                  {/* 7. ADMIN & CONTENT MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. ADMIN &amp; CONTENT MANAGEMENT
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Where applicable, the website will provide admin access to manage:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Products &amp; Product Categories</li>
+                    <li>Services</li>
+                    <li>Portfolio / Projects</li>
+                    <li>Testimonials</li>
+                    <li>Gallery</li>
+                    <li>Blog</li>
+                    <li>Enquiries</li>
+                    <li>Website Content</li>
+                  </ul>
+
+                  {/* 8. LEAD GENERATION & COMMUNICATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. LEAD GENERATION &amp; COMMUNICATION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Contact Enquiry Forms</li>
+                    <li>Product Enquiry</li>
+                    <li>Service Enquiry</li>
+                    <li>Request a Quote</li>
+                    <li>WhatsApp Enquiry Button</li>
+                    <li>Click-to-Call</li>
+                    <li>Email Enquiry</li>
+                    <li>Social Media Links</li>
+                    <li>Google Maps</li>
+                  </ul>
+
+                  {/* 9. SEO & PERFORMANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. SEO &amp; PERFORMANCE
+                  </div>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>SEO-Friendly URLs</li>
+                    <li>Meta Titles &amp; Descriptions</li>
+                    <li>Heading Structure</li>
+                    <li>Image ALT Tags</li>
+                    <li>XML Sitemap</li>
+                    <li>Robots.txt</li>
+                    <li>Google Analytics</li>
+                    <li>Google Search Console</li>
+                    <li>Mobile Optimization</li>
+                    <li>Basic Speed Optimization</li>
+                    <li>SSL Configuration</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}><strong>Note:</strong> Ongoing SEO and ranking services are available separately.</p>
+
+                  {/* 10. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. TIMELINE
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Estimated Duration</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Requirement Gathering &amp; Planning</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Sitemap &amp; Content Structure</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>UI/UX Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1–2 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Website Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>2–4 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Product / Service / Portfolio Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Testing &amp; Quality Assurance</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Final Corrections &amp; Deployment</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Day</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 13.5, color: '#334155', margin: '0 0 6px 0' }}><strong>Estimated Delivery:</strong> 5–10 Working Days.</p>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>Timeline starts after advance payment and receipt of all required content/materials.</p>
+
+                  {/* 11. HOSTING & SUPPORT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. HOSTING &amp; SUPPORT
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Inclusion</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hosting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>1 Year*</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>SSL</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical Support</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As per Package</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Bug Fixes</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>30 Days</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Admin Handover</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Basic Training</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Included</td></tr>
+                    </tbody>
+                  </table>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>*Subject to the selected quotation/package.</p>
+
+                  {/* 12. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'facebook_instagram_ads' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to manage and optimize <strong>Facebook &amp; Instagram advertising campaigns</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The service is designed to help businesses promote their products, services, offers or brand through paid social advertising, with a focus on relevant audience targeting, lead generation, campaign optimization and measurable performance.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Create and manage targeted Facebook &amp; Instagram advertising campaigns focused on <strong>reach, engagement, leads, enquiries, conversions or sales</strong> according to the approved campaign objective.
+                  </div>
+
+                  {/* 2. CAMPAIGN MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. CAMPAIGN MANAGEMENT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Campaign Planning</li>
+                    <li>Campaign Objective Selection</li>
+                    <li>Audience Research</li>
+                    <li>Audience Targeting</li>
+                    <li>Campaign Structure</li>
+                    <li>Ad Set Configuration</li>
+                    <li>Ad Creation / Setup</li>
+                    <li>Placement Selection</li>
+                    <li>Budget Allocation</li>
+                    <li>Campaign Launch</li>
+                    <li>Performance Monitoring</li>
+                    <li>Campaign Optimization</li>
+                  </ul>
+
+                  {/* 3. MONTHLY DELIVERABLES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. MONTHLY DELIVERABLES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Content Type</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Quantity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Posts</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>15 per month</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>High-quality images/videos with engaging captions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reels</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>5 per month</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Short-form video content (15–30 seconds)</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Stories</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>3–5 per week</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Behind-the-scenes, highlights, offers, updates and audience-focused content</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Engagement</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Daily</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Responding to comments and DMs</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hashtag Strategy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimized</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Industry-relevant hashtags designed to support maximum reach</td></tr>
+                    </tbody>
+                  </table>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> These monthly social media deliverables cover organic content and engagement. Paid advertising spend and campaign management are handled separately according to the approved scope.
+                  </div>
+
+                  {/* 4. FACEBOOK & INSTAGRAM AD FORMATS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. FACEBOOK &amp; INSTAGRAM AD FORMATS
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Depending on the campaign objective, suitable ad formats may include:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Image Ads</li>
+                    <li>Carousel Ads</li>
+                    <li>Video Ads</li>
+                    <li>Reels Ads</li>
+                    <li>Story Ads</li>
+                    <li>Lead Ads</li>
+                    <li>Traffic Ads</li>
+                    <li>Engagement Ads</li>
+                    <li>Conversion / Sales Campaigns</li>
+                    <li>Remarketing Campaigns, where applicable</li>
+                  </ul>
+
+                  {/* 5. TARGETING & AUDIENCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. TARGETING &amp; AUDIENCE
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Location-Based Targeting</li>
+                    <li>Age &amp; Gender Targeting</li>
+                    <li>Interest-Based Targeting</li>
+                    <li>Behavior-Based Targeting</li>
+                    <li>Custom Audiences, where available</li>
+                    <li>Lookalike Audiences, where available</li>
+                    <li>Website Visitors / Remarketing Audiences, where applicable</li>
+                    <li>Customer / Lead-Based Audiences, where applicable</li>
+                  </ul>
+
+                  {/* 6. CREATIVE & AD COPY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. CREATIVE &amp; AD COPY
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Ad creatives and copy can be developed according to the approved campaign strategy.
+                  </p>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Ad Headline</li>
+                    <li>Primary Ad Copy</li>
+                    <li>Call-to-Action</li>
+                    <li>Static Ad Creatives</li>
+                    <li>Carousel Creative</li>
+                    <li>Short-Form Video / Reel Creative, where included</li>
+                    <li>Offer / Promotional Creative</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+                    The exact number of creatives, videos, revisions and content deliverables will be defined in the final quotation.
+                  </p>
+
+                  {/* 7. LEAD GENERATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. LEAD GENERATION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Lead-generation campaigns can be configured using suitable conversion paths.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Facebook / Instagram Lead Forms</li>
+                    <li>Website Lead Forms</li>
+                    <li>WhatsApp Enquiries</li>
+                    <li>Call Enquiries</li>
+                    <li>Landing Page Campaigns</li>
+                    <li>Request-a-Quote Campaigns</li>
+                    <li>Consultation / Appointment Leads</li>
+                  </ul>
+
+                  {/* 8. TRACKING & SETUP */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. TRACKING &amp; SETUP
+                  </div>
+                  <ul style={{ margin: '0 0 14px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Meta Business / Ads Account Setup Assistance</li>
+                    <li>Facebook Page &amp; Instagram Account Connection</li>
+                    <li>Meta Pixel Setup, where applicable</li>
+                    <li>Conversion Event Setup, where applicable</li>
+                    <li>Domain Verification, where applicable</li>
+                    <li>Campaign Tracking</li>
+                    <li>UTM Tracking, where required</li>
+                  </ul>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> Availability of tracking features depends on the client's website, Meta account configuration, permissions and applicable platform requirements.
+                  </div>
+
+                  {/* 9. CAMPAIGN OPTIMIZATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. CAMPAIGN OPTIMIZATION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Performance Monitoring</li>
+                    <li>Audience Optimization</li>
+                    <li>Budget Optimization</li>
+                    <li>Creative Performance Review</li>
+                    <li>Ad Set Optimization</li>
+                    <li>Underperforming Ad Management</li>
+                    <li>Testing of Approved Variations</li>
+                    <li>Scaling of Suitable Campaigns, where appropriate</li>
+                  </ul>
+
+                  {/* 10. REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. REPORTING
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Performance reporting can include the following metrics, depending on the campaign objective:
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Reach</li>
+                    <li>Impressions</li>
+                    <li>Clicks</li>
+                    <li>CTR</li>
+                    <li>Leads</li>
+                    <li>Cost Per Lead</li>
+                    <li>Engagement</li>
+                    <li>Conversions</li>
+                    <li>Ad Spend</li>
+                    <li>Campaign Performance Summary</li>
+                  </ul>
+
+                  {/* 11. CAMPAIGN MANAGEMENT PROCESS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. CAMPAIGN MANAGEMENT PROCESS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Stage</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1. Requirement Analysis</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Understand business, offer, target audience and campaign objective</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2. Strategy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Define audience, campaign structure, messaging and conversion path</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3. Creative Preparation</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Prepare approved ad creatives and copy</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>4. Campaign Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Configure campaigns, audiences, placements and budget</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>5. Launch</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Launch approved campaigns</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>6. Monitoring</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monitor campaign performance and key metrics</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>7. Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize targeting, creatives, budget and campaign structure</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>8. Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Provide performance summary according to the agreed reporting cycle</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 12. CAMPAIGN DURATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. CAMPAIGN DURATION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Campaign duration will be based on the approved package, advertising strategy and business requirements.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Recommended Approach:</strong> Allow sufficient campaign time and budget for meaningful testing, optimization and performance evaluation. Results vary based on industry, offer, audience, creative quality, competition, landing page experience and advertising budget.
+                  </div>
+
+                  {/* 13. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'google_ads' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to manage and optimize <strong>Google Ads campaigns</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The service is designed to help businesses reach users actively searching for relevant products or services through paid search and other suitable Google advertising channels, with a focus on qualified traffic, enquiries, leads, conversions and measurable performance.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build and manage targeted Google Ads campaigns focused on <strong>qualified traffic, leads, enquiries, conversions or sales</strong> according to the approved campaign objective.
+                  </div>
+
+                  {/* 2. GOOGLE ADS CAMPAIGN MANAGEMENT */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. GOOGLE ADS CAMPAIGN MANAGEMENT
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Campaign Planning &amp; Strategy</li>
+                    <li>Keyword Research</li>
+                    <li>Search Intent Analysis</li>
+                    <li>Campaign Structure</li>
+                    <li>Ad Group Planning</li>
+                    <li>Ad Copy Creation / Setup</li>
+                    <li>Keyword Match-Type Configuration</li>
+                    <li>Negative Keyword Management</li>
+                    <li>Location Targeting</li>
+                    <li>Budget Allocation</li>
+                    <li>Campaign Launch</li>
+                    <li>Performance Monitoring</li>
+                    <li>Campaign Optimization</li>
+                  </ul>
+
+                  {/* 3. MONTHLY DELIVERABLES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. MONTHLY DELIVERABLES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Frequency / Quantity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Campaign Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monitoring, optimization and management of approved Google Ads campaigns</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Keyword Research</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Research and refinement of relevant search terms and opportunities</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Ad Copy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Search ad headlines and descriptions based on approved campaign strategy</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Negative Keywords</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Identify and add irrelevant search terms to improve traffic quality</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Budget, bids, keywords, ads and targeting optimization</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Performance summary with key campaign metrics and observations</td></tr>
+                    </tbody>
+                  </table>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> The exact number of campaigns, ad groups, keywords, ads and landing pages will depend on the approved scope and advertising budget.
+                  </div>
+
+                  {/* 4. GOOGLE ADS CAMPAIGN TYPES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. GOOGLE ADS CAMPAIGN TYPES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Search Ads</li>
+                    <li>Display Ads</li>
+                    <li>Remarketing Campaigns</li>
+                    <li>Performance Max Campaigns</li>
+                    <li>Call Campaigns, where available</li>
+                    <li>Shopping Campaigns, where applicable</li>
+                    <li>YouTube Advertising, where specifically included</li>
+                  </ul>
+
+                  {/* 5. KEYWORD & SEARCH STRATEGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. KEYWORD &amp; SEARCH STRATEGY
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Keyword Research</li>
+                    <li>Commercial Intent Analysis</li>
+                    <li>Search Intent Mapping</li>
+                    <li>Keyword Grouping</li>
+                    <li>Match-Type Strategy</li>
+                    <li>Long-Tail Keyword Research</li>
+                    <li>Negative Keyword Research</li>
+                    <li>Search Terms Review</li>
+                    <li>Keyword Performance Optimization</li>
+                  </ul>
+
+                  {/* 6. AD COPY & CREATIVE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. AD COPY &amp; CREATIVE
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Search Ad Headlines</li>
+                    <li>Search Ad Descriptions</li>
+                    <li>Call-to-Action Messaging</li>
+                    <li>Offer / Promotional Messaging</li>
+                    <li>Display Creative Coordination, where applicable</li>
+                    <li>Ad Extensions / Assets, where applicable</li>
+                  </ul>
+
+                  {/* 7. TARGETING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. TARGETING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Location Targeting</li>
+                    <li>Language Targeting</li>
+                    <li>Audience Signals, where applicable</li>
+                    <li>Device Targeting / Analysis</li>
+                    <li>Schedule / Time-Based Optimization</li>
+                    <li>Search Intent Targeting</li>
+                    <li>Remarketing Audiences, where applicable</li>
+                  </ul>
+
+                  {/* 8. CONVERSION TRACKING & SETUP */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. CONVERSION TRACKING &amp; SETUP
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Ads Account Setup Assistance</li>
+                    <li>Google Analytics Integration, where applicable</li>
+                    <li>Conversion Tracking Setup</li>
+                    <li>Lead Form Tracking</li>
+                    <li>Phone Call Tracking, where applicable</li>
+                    <li>Website Conversion Tracking</li>
+                    <li>Google Tag Manager Setup, where applicable</li>
+                    <li>UTM Tracking, where required</li>
+                  </ul>
+
+                  {/* 9. LANDING PAGE & CONVERSION EXPERIENCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. LANDING PAGE &amp; CONVERSION EXPERIENCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Google Ads performance depends significantly on the quality and relevance of the landing page. Campaigns can be directed to an existing website, dedicated landing page or separately developed conversion page.
+                  </p>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Keyword-to-Landing-Page Relevance</li>
+                    <li>Clear Call-to-Action</li>
+                    <li>Lead Form Optimization</li>
+                    <li>Mobile-Friendly Experience</li>
+                    <li>Page Speed Considerations</li>
+                    <li>Conversion-Focused Content Recommendations</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+                    Landing page design/development is available separately unless specifically included in the quotation.
+                  </p>
+
+                  {/* 10. CAMPAIGN OPTIMIZATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. CAMPAIGN OPTIMIZATION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Keyword Optimization</li>
+                    <li>Negative Keyword Updates</li>
+                    <li>Bid / Budget Optimization</li>
+                    <li>Ad Performance Review</li>
+                    <li>Search Terms Analysis</li>
+                    <li>Location Optimization</li>
+                    <li>Device Performance Analysis</li>
+                    <li>Audience Performance Analysis</li>
+                    <li>Conversion Performance Review</li>
+                    <li>Underperforming Campaign / Ad Management</li>
+                  </ul>
+
+                  {/* 11. REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. REPORTING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Impressions</li>
+                    <li>Clicks</li>
+                    <li>CTR</li>
+                    <li>Average CPC</li>
+                    <li>Conversions</li>
+                    <li>Cost Per Conversion / Lead</li>
+                    <li>Conversion Rate</li>
+                    <li>Ad Spend</li>
+                    <li>Search Terms / Keyword Performance</li>
+                    <li>Campaign Performance Summary</li>
+                  </ul>
+
+                  {/* 12. CAMPAIGN MANAGEMENT PROCESS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. CAMPAIGN MANAGEMENT PROCESS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Stage</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1. Requirement Analysis</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Understand business, services/products, target market and campaign objective</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2. Keyword Research</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Research relevant keywords, search intent and competition</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3. Campaign Planning</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Define campaign, ad group, targeting and budget structure</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>4. Ad Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Create approved ads, assets, keywords and targeting</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>5. Tracking</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Configure approved conversion and analytics tracking</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>6. Launch</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Launch approved campaigns</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>7. Monitoring</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monitor performance and key metrics</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>8. Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize keywords, ads, bids, budget and targeting</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>9. Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Provide performance summary according to the agreed reporting cycle</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 13. CAMPAIGN DURATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. CAMPAIGN DURATION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Campaign duration will be based on the approved package, advertising strategy and business requirements.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Recommended Approach:</strong> Allow sufficient campaign time and budget for meaningful testing, optimization and performance evaluation. Results vary based on industry, competition, search demand, offer quality, landing page experience and advertising budget.
+                  </div>
+
+                  {/* 14. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'multi_platform_ads' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes to plan, manage and optimize <strong>multi-platform paid advertising campaigns</strong> for <strong>{displayClientHeading || '[Client / Company Name]'}</strong>.
+                  </p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 16px 0' }}>
+                    The campaign strategy will use the most relevant advertising platforms according to the client's business objectives, target audience, industry, geography and approved advertising budget.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build an integrated paid advertising strategy focused on <strong>qualified traffic, leads, enquiries, conversions, sales or brand awareness</strong>.
+                  </div>
+
+                  {/* 2. ADVERTISING PLATFORMS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. ADVERTISING PLATFORMS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Platform</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Advertising Scope</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Facebook + Instagram</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Meta Ads, Lead Generation, Engagement, Traffic, Conversion &amp; Remarketing</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Google</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Search Ads, Display Ads, Performance Max, Remarketing &amp; Conversion Campaigns</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>LinkedIn</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>B2B Lead Generation, Sponsored Content, Website Traffic &amp; Professional Audience Targeting</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Other Platforms</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advertising campaigns on additional platforms as required by the business</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 3. MONTHLY DELIVERABLES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. MONTHLY DELIVERABLES
+                  </div>
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', margin: '0 0 8px 0' }}>Social Media Content</p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 16, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Content Type</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Quantity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Posts</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>15 per month</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>High-quality images/videos with engaging captions</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reels</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>5 per month</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Short-form video content (15–30 seconds)</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Stories</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>3–5 per week</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Behind-the-scenes, class highlights, student spotlights</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Engagement</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Daily</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Responding to comments and DMs</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Hashtag Strategy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimized</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Industry-relevant hashtags for maximum reach</td></tr>
+                    </tbody>
+                  </table>
+
+                  <p style={{ fontSize: 13.5, fontWeight: 700, color: '#0f172a', margin: '16px 0 8px 0' }}>Paid Advertising Management</p>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '20%' }}>Frequency</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Campaign Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Management and optimization of approved campaigns across selected platforms</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Audience Research</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Audience, market and targeting research based on campaign objectives</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Campaign Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Campaigns, ad sets/ad groups, targeting, budgets and placements</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Ad Copy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Platform-specific headlines, descriptions and calls-to-action</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Creative Coordination</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ad creative planning and coordination according to the approved scope</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Budget, audience, keyword, creative and campaign optimization</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Performance summary with key metrics and recommendations</td></tr>
+                    </tbody>
+                  </table>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> The exact number of campaigns, ad sets/ad groups, creatives, keywords, audiences and platforms will depend on the approved scope and advertising budget.
+                  </div>
+
+                  {/* 4. CAMPAIGN OBJECTIVES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. CAMPAIGN OBJECTIVES
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Lead Generation</li>
+                    <li>Website Traffic</li>
+                    <li>Conversions</li>
+                    <li>Online Sales</li>
+                    <li>Brand Awareness</li>
+                    <li>Engagement</li>
+                    <li>App Promotion, where applicable</li>
+                    <li>Remarketing</li>
+                    <li>Enquiry Generation</li>
+                  </ul>
+
+                  {/* 5. AUDIENCE & TARGETING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. AUDIENCE &amp; TARGETING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Location-Based Targeting</li>
+                    <li>Age &amp; Demographic Targeting</li>
+                    <li>Interest-Based Targeting</li>
+                    <li>Behavior-Based Targeting</li>
+                    <li>Keyword / Search Intent Targeting</li>
+                    <li>Professional / Industry Targeting</li>
+                    <li>Custom Audiences, where available</li>
+                    <li>Lookalike Audiences, where available</li>
+                    <li>Website Visitor Audiences</li>
+                    <li>Remarketing Audiences</li>
+                  </ul>
+
+                  {/* 6. CREATIVE & AD COPY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. CREATIVE &amp; AD COPY
+                  </div>
+                  <ul style={{ margin: '0 0 12px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Static Image Ads</li>
+                    <li>Carousel Ads</li>
+                    <li>Video Ads</li>
+                    <li>Reels / Short-Form Ads</li>
+                    <li>Story Ads</li>
+                    <li>Search Ad Copy</li>
+                    <li>Sponsored Content</li>
+                    <li>Headlines &amp; Descriptions</li>
+                    <li>Call-to-Action Messaging</li>
+                    <li>Offer / Promotional Messaging</li>
+                  </ul>
+                  <p style={{ fontSize: 12.5, color: '#64748b', fontStyle: 'italic', margin: '0 0 20px 0' }}>
+                    The exact number of creatives, videos, revisions and content deliverables will be finalized in the quotation.
+                  </p>
+
+                  {/* 7. TRACKING & CONVERSION SETUP */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. TRACKING &amp; CONVERSION SETUP
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Meta Pixel / Conversion Tracking, where applicable</li>
+                    <li>Google Ads Conversion Tracking</li>
+                    <li>Google Analytics Integration</li>
+                    <li>Google Tag Manager, where applicable</li>
+                    <li>LinkedIn Insight Tag, where applicable</li>
+                    <li>Lead Form Tracking</li>
+                    <li>Website Conversion Tracking</li>
+                    <li>Phone Call Tracking, where applicable</li>
+                    <li>UTM Tracking</li>
+                  </ul>
+
+                  {/* 8. CAMPAIGN OPTIMIZATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. CAMPAIGN OPTIMIZATION
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Budget Optimization</li>
+                    <li>Audience Optimization</li>
+                    <li>Keyword Optimization</li>
+                    <li>Creative Performance Analysis</li>
+                    <li>Ad Performance Review</li>
+                    <li>Search Terms Analysis</li>
+                    <li>Placement Optimization</li>
+                    <li>Location Optimization</li>
+                    <li>Device Performance Analysis</li>
+                    <li>Conversion Performance Review</li>
+                    <li>Underperforming Campaign Management</li>
+                  </ul>
+
+                  {/* 9. REMARKETING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. REMARKETING
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Remarketing campaigns can be implemented where suitable audiences and tracking data are available.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Website Visitor Remarketing</li>
+                    <li>Engaged Audience Remarketing</li>
+                    <li>Customer / Lead Remarketing</li>
+                    <li>Product / Service Remarketing, where applicable</li>
+                    <li>Cross-Platform Remarketing Strategy, where supported</li>
+                  </ul>
+
+                  {/* 10. REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. REPORTING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Reach</li>
+                    <li>Impressions</li>
+                    <li>Clicks</li>
+                    <li>CTR</li>
+                    <li>CPC</li>
+                    <li>Leads</li>
+                    <li>Cost Per Lead</li>
+                    <li>Conversions</li>
+                    <li>Conversion Rate</li>
+                    <li>Advertising Spend</li>
+                    <li>Campaign Performance Summary</li>
+                  </ul>
+
+                  {/* 11. CAMPAIGN MANAGEMENT PROCESS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. CAMPAIGN MANAGEMENT PROCESS
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Stage</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Activity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>1. Requirement Analysis</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Understand business, offer, target audience and campaign objectives</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>2. Strategy</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Select suitable platforms, audiences, campaign types and conversion paths</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>3. Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Configure campaigns, targeting, budgets, tracking and creatives</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>4. Launch</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Launch approved campaigns across selected platforms</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>5. Monitoring</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monitor campaign performance and key metrics</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>6. Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize budgets, targeting, creatives and campaign structure</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>7. Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Provide performance summary and recommendations</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 12. CAMPAIGN DURATION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. CAMPAIGN DURATION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    Campaign duration will be based on the approved package, advertising strategy, campaign objective and business requirements.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Recommended Approach:</strong> Allow sufficient campaign time and budget for testing, optimization and performance evaluation. Results vary based on industry, competition, audience, offer quality, creative quality, landing page experience and advertising budget.
+                  </div>
+
+                  {/* 13. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'seo_local_lead_gen' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes a comprehensive <strong>SEO, Local SEO &amp; Lead Generation</strong> program for <strong>{displayClientHeading || '[Client / Company Name]'}</strong> to improve organic visibility, relevant traffic, local search presence, enquiries and long-term search performance.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build sustainable organic growth through technical SEO, keyword strategy, content optimization, local search optimization, authority building and conversion-focused lead generation.
+                  </div>
+
+                  {/* 2. SEO & GROWTH STRATEGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. SEO &amp; GROWTH STRATEGY
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Business &amp; Competitor Analysis</li>
+                    <li>Keyword Research</li>
+                    <li>Search Intent Analysis</li>
+                    <li>On-Page SEO</li>
+                    <li>Technical SEO</li>
+                    <li>Content Optimization</li>
+                    <li>Internal Linking</li>
+                    <li>Off-Page SEO / Authority Building</li>
+                    <li>Local SEO</li>
+                    <li>Commercial-Intent Keyword Targeting</li>
+                    <li>Conversion Optimization</li>
+                    <li>Performance Monitoring</li>
+                    <li>Monthly Reporting</li>
+                  </ul>
+
+                  {/* 3. MONTHLY DELIVERABLES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. MONTHLY DELIVERABLES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 14, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Frequency</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Keyword Research</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly / As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Identify relevant primary, secondary, long-tail and commercial-intent keywords.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>On-Page Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize titles, descriptions, headings, content, URLs and internal links.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical SEO</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Review crawlability, indexing, site structure, speed and technical issues.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Content Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize existing pages and create/plan SEO content according to the approved scope.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Local SEO</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Improve local keyword targeting, location relevance, local pages and citations.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Off-Page SEO</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Relevant authority-building and link acquisition activities according to the approved strategy.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Lead Generation Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Improve commercial pages, calls-to-action, enquiry opportunities and conversion paths.</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Performance summary, keyword movement, traffic, leads and recommendations.</td></tr>
+                    </tbody>
+                  </table>
+                  <div style={{ background: '#fff3cd', borderLeft: '5px solid #ffc107', padding: 14, margin: '0 0 24px 0', borderRadius: 6, fontSize: 13, color: '#66512c', lineHeight: 1.6 }}>
+                    <strong>Note:</strong> Exact monthly quantities for keywords, pages, blogs, backlinks and other deliverables will be defined in the final quotation according to the selected package.
+                  </div>
+
+                  {/* 4. ON-PAGE SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. ON-PAGE SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Meta Title Optimization</li>
+                    <li>Meta Description Optimization</li>
+                    <li>H1–H6 Heading Structure</li>
+                    <li>Keyword Placement</li>
+                    <li>Content Optimization</li>
+                    <li>Image ALT Text</li>
+                    <li>URL Optimization</li>
+                    <li>Internal Linking</li>
+                    <li>Schema Markup, where applicable</li>
+                    <li>Service / Product Page Optimization</li>
+                  </ul>
+
+                  {/* 5. TECHNICAL SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. TECHNICAL SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Website Crawl &amp; Indexing Review</li>
+                    <li>XML Sitemap</li>
+                    <li>Robots.txt Review</li>
+                    <li>Canonicalization</li>
+                    <li>404 / Redirect Review</li>
+                    <li>Mobile Optimization</li>
+                    <li>Page Speed Recommendations</li>
+                    <li>Core Web Vitals Review</li>
+                    <li>HTTPS / Security Review</li>
+                    <li>Search Console Monitoring</li>
+                    <li>Technical Error Identification</li>
+                  </ul>
+
+                  {/* 6. CONTENT & KEYWORD GROWTH */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. CONTENT &amp; KEYWORD GROWTH
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Primary &amp; Secondary Keyword Research</li>
+                    <li>Long-Tail Keyword Research</li>
+                    <li>Commercial-Intent Keywords</li>
+                    <li>Topic Clustering</li>
+                    <li>SEO Blog Planning</li>
+                    <li>Service / Product Page Optimization</li>
+                    <li>Local Search Content</li>
+                    <li>Competitor Content Gap Analysis</li>
+                    <li>Content Recommendations Based on Search Intent</li>
+                  </ul>
+
+                  {/* 7. LOCAL SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. LOCAL SEO
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The local SEO strategy is focused on increasing visibility for location-based searches and connecting the business with customers searching for relevant services in target cities, areas and service locations.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Location-Based Keyword Research</li>
+                    <li>City / Area Landing Pages</li>
+                    <li>Local Search Content Strategy</li>
+                    <li>Local Citation Strategy</li>
+                    <li>Local Directory Optimization</li>
+                    <li>NAP Consistency Review</li>
+                    <li>Local Competitor Analysis</li>
+                    <li>Local Ranking Monitoring</li>
+                    <li>Service Area Optimization</li>
+                  </ul>
+
+                  {/* 8. OFF-PAGE SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. OFF-PAGE SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Authority Building</li>
+                    <li>Relevant Backlink Opportunities</li>
+                    <li>Business / Industry Citations, where applicable</li>
+                    <li>Brand Mention Opportunities</li>
+                    <li>Competitor Backlink Analysis</li>
+                    <li>Relevant Directory / Industry Listings</li>
+                  </ul>
+
+                  {/* 9. LEAD GENERATION & CONVERSION */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. LEAD GENERATION &amp; CONVERSION
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The SEO strategy can be connected directly with lead-generation objectives by prioritizing commercial-intent keywords, service pages, landing pages and measurable enquiry actions.
+                  </p>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Commercial-Intent Keyword Targeting</li>
+                    <li>Service / Product Page Optimization</li>
+                    <li>Landing Page Recommendations</li>
+                    <li>Lead Form Optimization</li>
+                    <li>Call-to-Action Optimization</li>
+                    <li>WhatsApp / Call Enquiry Opportunities</li>
+                    <li>Quote / Consultation Enquiry Opportunities</li>
+                    <li>Conversion Tracking, where available</li>
+                  </ul>
+
+                  {/* 10. ANALYTICS & REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. ANALYTICS &amp; REPORTING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Search Console</li>
+                    <li>Google Analytics</li>
+                    <li>Keyword Rankings</li>
+                    <li>Organic Clicks &amp; Impressions</li>
+                    <li>Organic Traffic</li>
+                    <li>CTR</li>
+                    <li>Conversions / Leads, where tracking is available</li>
+                    <li>Local Search Performance, where applicable</li>
+                    <li>Monthly Recommendations</li>
+                  </ul>
+
+                  {/* 11. GROWTH APPROACH */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. GROWTH APPROACH
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0' }}>
+                    The growth program combines technical SEO, content, local search visibility, authority development and conversion-focused optimization. Priority areas can be adjusted based on business goals, competition, search demand and monthly performance.
+                  </p>
+
+                  {/* 12. PROJECT TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. PROJECT TIMELINE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    SEO is a continuous growth activity. Initial technical and strategic work may be completed during the first month, followed by ongoing optimization, content development, local SEO and authority-building activities.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Estimated Approach:</strong> Final milestones and delivery timelines will be confirmed according to the selected package, website condition, number of pages, target locations and approved scope.
+                  </div>
+
+                  {/* 13. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. COMMERCIALS
+                  </div>
+                </>
+              ) : templateType === 'seo_growth_marketing' ? (
+                <>
+                  {/* 1. PROJECT OVERVIEW */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    1. PROJECT OVERVIEW
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    HiveRift Softwares Pvt. Ltd. proposes a structured <strong>SEO &amp; Growth Marketing</strong> program for <strong>{displayClientHeading || '[Client / Company Name]'}</strong> to improve organic visibility, relevant traffic, enquiries and long-term search performance.
+                  </p>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.6 }}>
+                    <strong>Primary Objective:</strong> Build sustainable organic growth through technical SEO, keyword strategy, content optimization, authority building and performance monitoring.
+                  </div>
+
+                  {/* 2. SEO STRATEGY */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    2. SEO STRATEGY
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Business &amp; Competitor Analysis</li>
+                    <li>Keyword Research</li>
+                    <li>Search Intent Analysis</li>
+                    <li>On-Page SEO</li>
+                    <li>Technical SEO</li>
+                    <li>Content Optimization</li>
+                    <li>Internal Linking</li>
+                    <li>Off-Page SEO / Authority Building</li>
+                    <li>Performance Monitoring</li>
+                    <li>Monthly Reporting</li>
+                  </ul>
+
+                  {/* 3. MONTHLY DELIVERABLES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    3. MONTHLY DELIVERABLES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '30%' }}>Activity</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left', width: '25%' }}>Frequency</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Keyword Research</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly / As Required</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Identify relevant keywords and search opportunities</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>On-Page Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Ongoing</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize titles, descriptions, headings, content, URLs and internal links</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Technical SEO</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Review crawlability, indexing, site structure, speed and technical issues</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Content Optimization</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Optimize existing pages and create/plan content according to the approved scope</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Off-Page SEO</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Relevant authority-building and link acquisition activities according to the approved strategy</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Monthly</td><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Performance summary, keyword movement, traffic and recommendations</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 4. ON-PAGE SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    4. ON-PAGE SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Meta Title Optimization</li>
+                    <li>Meta Description Optimization</li>
+                    <li>H1–H6 Heading Structure</li>
+                    <li>Keyword Placement</li>
+                    <li>Content Optimization</li>
+                    <li>Image ALT Text</li>
+                    <li>URL Optimization</li>
+                    <li>Internal Linking</li>
+                    <li>Schema Markup, where applicable</li>
+                  </ul>
+
+                  {/* 5. TECHNICAL SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    5. TECHNICAL SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Website Crawl &amp; Indexing Review</li>
+                    <li>XML Sitemap</li>
+                    <li>Robots.txt Review</li>
+                    <li>Canonicalization</li>
+                    <li>404 / Redirect Review</li>
+                    <li>Mobile Optimization</li>
+                    <li>Page Speed Recommendations</li>
+                    <li>Core Web Vitals Review</li>
+                    <li>HTTPS / Security Review</li>
+                    <li>Search Console Monitoring</li>
+                  </ul>
+
+                  {/* 6. CONTENT & KEYWORD GROWTH */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    6. CONTENT &amp; KEYWORD GROWTH
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Primary &amp; Secondary Keyword Research</li>
+                    <li>Long-Tail Keyword Research</li>
+                    <li>Topic Clustering</li>
+                    <li>SEO Blog Planning</li>
+                    <li>Service / Product Page Optimization</li>
+                    <li>Local Search Content, where applicable</li>
+                    <li>Competitor Content Gap Analysis</li>
+                  </ul>
+
+                  {/* 7. OFF-PAGE SEO */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    7. OFF-PAGE SEO
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Authority Building</li>
+                    <li>Relevant Backlink Opportunities</li>
+                    <li>Business / Industry Citations, where applicable</li>
+                    <li>Brand Mention Opportunities</li>
+                    <li>Competitor Backlink Analysis</li>
+                  </ul>
+
+                  {/* 8. ANALYTICS & REPORTING */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    8. ANALYTICS &amp; REPORTING
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Search Console</li>
+                    <li>Google Analytics</li>
+                    <li>Keyword Rankings</li>
+                    <li>Organic Clicks &amp; Impressions</li>
+                    <li>Organic Traffic</li>
+                    <li>CTR</li>
+                    <li>Conversions / Leads, where tracking is available</li>
+                    <li>Monthly Recommendations</li>
+                  </ul>
+
+                  {/* 9. GROWTH APPROACH */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    9. GROWTH APPROACH
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0' }}>
+                    The growth program combines SEO with business-focused content, search visibility and conversion opportunities. Priority areas can be adjusted based on business goals, competition and monthly performance.
+                  </p>
+
+                  {/* 10. TIMELINE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    10. TIMELINE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0' }}>
+                    SEO is a continuous growth activity. Initial technical and strategic work may be completed during the first month, followed by ongoing optimization and content/authority development.
+                  </p>
+
+                  {/* 11. COMMERCIALS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    11. COMMERCIALS
+                  </div>
+                </>
+              ) : (
+                /* STANDARD TEMPLATE SECTION 1 */
+                <div style={{ marginBottom: 12 }}>
+                  {isEditing ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                      <div style={{ width: 5, height: 18, background: '#198754' }} />
+                      <input
+                        type="text"
+                        value={section1Title}
+                        onChange={(e) => setSection1Title(e.target.value)}
+                        placeholder="Section 1 Heading"
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: '#111',
+                          border: '1px dashed #cbd5e1',
+                          borderRadius: 4,
+                          padding: '3px 8px',
+                          outline: 'none',
+                          width: '100%',
+                          background: '#f8fafc',
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div
                       style={{
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: 700,
+                        marginTop: 24,
+                        marginBottom: 10,
+                        paddingLeft: 10,
+                        borderLeft: '5px solid #198754',
                         color: '#111',
-                        border: '1px dashed #cbd5e1',
-                        borderRadius: 4,
-                        padding: '3px 8px',
-                        outline: 'none',
+                      }}
+                    >
+                      {section1Title}
+                    </div>
+                  )}
+
+                  {isEditing ? (
+                    <textarea
+                      rows={4}
+                      value={executiveSummary}
+                      onChange={(e) => setExecutiveSummary(e.target.value)}
+                      placeholder="Enter executive proposal summary..."
+                      style={{
                         width: '100%',
-                        background: '#f8fafc',
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        border: '1px solid #cbd5e1',
+                        borderRadius: 6,
+                        outline: 'none',
+                        lineHeight: 1.6,
+                        color: '#334155',
+                        boxSizing: 'border-box',
+                        marginBottom: 20,
                       }}
                     />
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      fontSize: 16,
-                      fontWeight: 700,
-                      marginTop: 24,
-                      marginBottom: 10,
-                      paddingLeft: 10,
-                      borderLeft: '5px solid #198754',
-                      color: '#111',
-                    }}
-                  >
-                    {section1Title}
-                  </div>
-                )}
-
-                {isEditing ? (
-                  <textarea
-                    rows={4}
-                    value={executiveSummary}
-                    onChange={(e) => setExecutiveSummary(e.target.value)}
-                    placeholder="Enter executive proposal summary..."
-                    style={{
-                      width: '100%',
-                      padding: '10px 12px',
-                      fontSize: 13,
-                      border: '1px solid #cbd5e1',
-                      borderRadius: 6,
-                      outline: 'none',
-                      lineHeight: 1.6,
-                      color: '#334155',
-                      boxSizing: 'border-box',
-                      marginBottom: 20,
-                    }}
-                  />
-                ) : (
-                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0', textAlign: 'justify' }}>
-                    {executiveSummary}
-                  </p>
-                )}
-              </div>
+                  ) : (
+                    <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 20px 0', textAlign: 'justify' }}>
+                      {executiveSummary}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* 2. SCOPE OF WORK & COMMERCIAL DELIVERABLES */}
               <div style={{ marginBottom: 12 }}>
@@ -1999,8 +4361,810 @@ export default function ProposalCanvasModal({
                   </div>
                 )}
               </div>
+              {/* CUSTOM WEB APP EXTRA SECTIONS 16 to 19 */}
+              {templateType === 'custom_web_app' && (
+                <>
+                  {/* 16. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Module</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional User Role</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Reporting Dashboard</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>ERP Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Payment Gateway Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SMS Gateway</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>AI Chatbot / AI Features</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Automation</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Mobile Application</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Cloud Infrastructure / DevOps</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Annual Maintenance Contract</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, borderTop: '2px dashed #cbd5e1', paddingTop: 24, marginTop: 16 }}>
+                  {/* 17. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Domain Registration/Renewal</li>
+                    <li>Third-Party Software / API Subscription Charges</li>
+                    <li>Payment Gateway Transaction Charges</li>
+                    <li>SMS / WhatsApp Usage Charges</li>
+                    <li>Cloud / Server Usage Charges beyond the approved package</li>
+                    <li>External Software Licensing Costs</li>
+                    <li>Mobile Application Development, unless included</li>
+                    <li>Major Features Added After Scope Approval</li>
+                    <li>Ongoing Maintenance, unless specifically quoted</li>
+                    <li>Features outside the approved technical scope</li>
+                  </ul>
+
+                  {/* 18. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal is designed for businesses requiring a <strong>custom web application</strong> rather than a standard informational website.
+                    <br /><br />
+                    The final modules, user roles, workflows, integrations, automation, technology, timeline and pricing will be confirmed after requirement analysis and finalized in the project quotation / scope document.
+                  </div>
+
+                  {/* 19. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    19. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and technical scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% advance payment</li>
+                    <li>Submission of required business information, content and access credentials, where applicable</li>
+                  </ol>
+                </>
+              )}
+
+              {/* E-COMMERCE EXTRA SECTIONS 16 to 19 */}
+              {templateType === 'ecommerce_website' && (
+                <>
+                  {/* 16. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Pages</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Bulk Product Upload</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Product Filters</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Inventory Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Courier / Shipping API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>ERP Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>AI Chatbot</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Analytics</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Product Photography</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Product Content Writing</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 17. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Domain Registration/Renewal</li>
+                    <li>Paid Stock Images</li>
+                    <li>Professional Product Photography</li>
+                    <li>Video Production</li>
+                    <li>Payment Gateway Transaction Charges</li>
+                    <li>Courier / Shipping Charges</li>
+                    <li>Paid Third-Party Plugins/APIs</li>
+                    <li>WhatsApp API Charges</li>
+                    <li>SMS Gateway Charges</li>
+                    <li>Advanced ERP / CRM Integration</li>
+                    <li>Ongoing SEO</li>
+                    <li>Advertising Budget</li>
+                    <li>Features outside the approved scope</li>
+                  </ul>
+
+                  {/* 18. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal is designed for businesses that require a complete <strong>online shopping platform</strong>.
+                    The final scope will be customized according to the client's product catalogue, payment requirements, shipping model, integrations and business processes.
+                    <br /><br />
+                    Product quantity, catalogue upload, advanced integrations, custom modules and third-party services will be finalized in the final quotation.
+                  </div>
+
+                  {/* 19. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    19. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and project scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the applicable advance payment</li>
+                    <li>Submission of required content, product information and branding materials</li>
+                  </ol>
+                </>
+              )}
+
+              {/* IT & SOFTWARE DEV EXTRA SECTIONS 17 to 20 */}
+              {templateType === 'it_software_dev' && (
+                <>
+                  {/* 17. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Module</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional User Role</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Dashboard / Reporting</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>ERP Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Payment Gateway</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SMS Gateway</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>AI Features / AI Chatbot</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Automation</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Mobile Application</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Cloud Infrastructure / DevOps</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Annual Maintenance Contract</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 18. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Domain Registration/Renewal</li>
+                    <li>Third-Party Software / API Subscription Charges</li>
+                    <li>Payment Gateway Transaction Charges</li>
+                    <li>SMS / WhatsApp Usage Charges</li>
+                    <li>Cloud / Server Usage Charges beyond the approved package</li>
+                    <li>External Software Licensing Costs</li>
+                    <li>Mobile Application Development, unless included</li>
+                    <li>Major Features Added After Scope Approval</li>
+                    <li>Ongoing Maintenance, unless specifically quoted</li>
+                    <li>Features outside the approved technical scope</li>
+                  </ul>
+
+                  {/* 19. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    19. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal is designed as a universal <strong>IT &amp; Software Development solution</strong> for businesses requiring custom technology, software or application development.
+                    <br /><br />
+                    The final modules, technology, integrations, user roles, timeline and pricing will be confirmed after requirement analysis and finalized in the project quotation / scope document.
+                  </div>
+
+                  {/* 20. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    20. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and technical scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% advance payment</li>
+                    <li>Submission of required business information, content and access credentials, where applicable</li>
+                  </ol>
+                </>
+              )}
+
+              {/* LANDING PAGE EXTRA SECTIONS 13 to 16 */}
+              {templateType === 'landing_page' && (
+                <>
+                  {/* 13. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Landing Page</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Sections</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Lead Form</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>AI Chatbot</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Copywriting</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Professional Photography / Video</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 14. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Domain Registration/Renewal</li>
+                    <li>Paid Stock Images</li>
+                    <li>Professional Photography</li>
+                    <li>Video Production</li>
+                    <li>Paid Third-Party Plugins/APIs</li>
+                    <li>WhatsApp API Charges</li>
+                    <li>CRM / Automation Charges</li>
+                    <li>Advertising Budget</li>
+                    <li>Ongoing SEO</li>
+                    <li>Advertising Management, unless quoted separately</li>
+                    <li>Features outside the approved scope</li>
+                  </ul>
+
+                  {/* 15. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal is designed for a focused <strong>Landing Page</strong> used for business promotion, lead generation, service/product campaigns, special offers, events or paid advertising.
+                    <br /><br />
+                    The final content, sections, integrations, campaign objective, timeline and pricing will be confirmed in the final quotation.
+                  </div>
+
+                  {/* 16. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and project scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% advance payment</li>
+                    <li>Submission of required content, images and campaign information</li>
+                  </ol>
+                </>
+              )}
+
+              {/* PORTFOLIO WEBSITE EXTRA SECTIONS 13 to 16 */}
+              {templateType === 'portfolio_website' && (
+                <>
+                  {/* 13. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Pages</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Products / Services</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>AI Chatbot</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Payment Gateway</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>E-Commerce Functionality</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Appointment Booking</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Advanced Admin Panel</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google / Facebook / LinkedIn Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Logo Design</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Company Profile</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Photography / Video Production</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 14. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Domain Registration/Renewal</li>
+                    <li>Paid Stock Images</li>
+                    <li>Professional Photography</li>
+                    <li>Video Production</li>
+                    <li>Paid Third-Party Plugins/APIs</li>
+                    <li>WhatsApp API Charges</li>
+                    <li>E-Commerce Functionality</li>
+                    <li>Payment Gateway Charges</li>
+                    <li>Advanced CRM/Automation</li>
+                    <li>Ongoing SEO</li>
+                    <li>Advertising Budget</li>
+                    <li>Features outside the approved scope</li>
+                  </ul>
+
+                  {/* 15. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal is a <strong>universal showcase website solution</strong> and can be customized for <strong>Service-Based Business + Product-Based Business + Portfolio/Project-Based Business.</strong>
+                    <br /><br />
+                    The final scope, number of pages, products, services, portfolio items, integrations, timeline and pricing will be confirmed in the final quotation.
+                  </div>
+
+                  {/* 16. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal/scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the applicable advance payment</li>
+                    <li>Submission of required content and materials</li>
+                  </ol>
+                </>
+              )}
+
+              {/* FACEBOOK & INSTAGRAM ADS EXTRA SECTIONS 14 to 18 */}
+              {templateType === 'facebook_instagram_ads' && (
+                <>
+                  {/* 14. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Ad Creatives</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Video / Reel Production</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Website Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Lead Management / CRM</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Social Media Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Professional Photography</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 15. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Facebook / Instagram Advertising Spend</li>
+                    <li>Third-Party Platform Charges</li>
+                    <li>Professional Photography</li>
+                    <li>Professional Video Production, unless included</li>
+                    <li>Landing Page Development, unless included</li>
+                    <li>CRM / Automation Charges</li>
+                    <li>WhatsApp API Charges</li>
+                    <li>Influencer / Creator Fees</li>
+                    <li>Website Development</li>
+                    <li>Guaranteed Leads, Sales or Revenue</li>
+                    <li>Services outside the approved scope</li>
+                  </ul>
+
+                  {/* 16. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal covers <strong>Facebook &amp; Instagram paid advertising management</strong>. Advertising results are influenced by market conditions, competition, offer quality, creative, audience, website/landing page experience, campaign budget and platform algorithms.
+                    <br /><br />
+                    HiveRift will focus on campaign strategy, setup, monitoring and optimization according to the approved scope. No fixed number of leads, sales, revenue or return on ad spend is guaranteed unless specifically agreed in writing.
+                  </div>
+
+                  {/* 17. CLIENT REQUIREMENTS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. CLIENT REQUIREMENTS
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Access to Meta Business / Ads Manager, where required</li>
+                    <li>Facebook Page &amp; Instagram Account Access</li>
+                    <li>Business Information</li>
+                    <li>Product / Service Information</li>
+                    <li>Offer / Pricing Details</li>
+                    <li>Target Location &amp; Audience Information</li>
+                    <li>Brand Logo &amp; Approved Brand Assets</li>
+                    <li>Website / Landing Page Access, where applicable</li>
+                    <li>Required approvals and campaign feedback</li>
+                  </ul>
+
+                  {/* 18. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The campaign will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and campaign scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% management fee advance</li>
+                    <li>Availability of required account access, business information and creative assets</li>
+                    <li>Availability of the approved advertising budget in the client's Meta advertising account</li>
+                  </ol>
+                </>
+              )}
+
+              {/* GOOGLE ADS EXTRA SECTIONS 15 to 19 */}
+              {templateType === 'google_ads' && (
+                <>
+                  {/* 15. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Campaigns</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Landing Page</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Analytics Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Tag Manager Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Conversion Tracking</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Remarketing Setup</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Display Advertising</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>YouTube Advertising</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 16. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Google Ads Advertising Spend</li>
+                    <li>Third-Party Platform Charges</li>
+                    <li>Landing Page Development, unless included</li>
+                    <li>Professional Photography / Video Production</li>
+                    <li>CRM / Automation Charges</li>
+                    <li>Third-Party Tracking Tools</li>
+                    <li>Website Development</li>
+                    <li>Guaranteed Leads, Sales or Revenue</li>
+                    <li>Guaranteed Search Position</li>
+                    <li>Services outside the approved scope</li>
+                  </ul>
+
+                  {/* 17. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal covers <strong>Google Ads paid advertising management</strong>. Advertising results are influenced by search demand, competition, keyword costs, offer quality, ad relevance, landing page experience, conversion tracking and advertising budget.
+                    <br /><br />
+                    HiveRift will focus on campaign strategy, setup, monitoring and optimization according to the approved scope. No fixed number of leads, sales, revenue, ranking position or return on ad spend is guaranteed unless specifically agreed in writing.
+                  </div>
+
+                  {/* 18. CLIENT REQUIREMENTS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. CLIENT REQUIREMENTS
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Access to Google Ads Account, where required</li>
+                    <li>Google Analytics / Tag Manager Access, where applicable</li>
+                    <li>Business Information</li>
+                    <li>Product / Service Information</li>
+                    <li>Offer / Pricing Details</li>
+                    <li>Target Location &amp; Audience Information</li>
+                    <li>Website / Landing Page Access, where applicable</li>
+                    <li>Required approvals and campaign feedback</li>
+                    <li>Approved advertising budget in the client's Google Ads account</li>
+                  </ul>
+
+                  {/* 19. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    19. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The campaign will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and campaign scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% management fee advance</li>
+                    <li>Availability of required account access, business information and campaign assets</li>
+                    <li>Availability of the approved advertising budget in the client's Google Ads account</li>
+                  </ol>
+                </>
+              )}
+
+              {/* MULTI-PLATFORM ADVERTISING EXTRA SECTIONS 14 to 18 */}
+              {templateType === 'multi_platform_ads' && (
+                <>
+                  {/* 14. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Ad Creatives</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Video / Reel Production</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Website Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Lead Management System</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads Management Only</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads Management Only</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads Management Only</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Social Media Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 15. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Advertising Spend / Media Budget</li>
+                    <li>Third-Party Platform Charges</li>
+                    <li>Professional Photography</li>
+                    <li>Professional Video Production, unless included</li>
+                    <li>Landing Page Development, unless included</li>
+                    <li>CRM / Automation Charges</li>
+                    <li>WhatsApp API Charges</li>
+                    <li>Influencer / Creator Fees</li>
+                    <li>Website Development, unless included</li>
+                    <li>Guaranteed Leads, Sales or Revenue</li>
+                    <li>Services outside the approved scope</li>
+                  </ul>
+
+                  {/* 16. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    This proposal covers <strong>multi-platform paid advertising management</strong>. The final platforms, campaign types, number of campaigns, creative requirements, advertising budget and management fee will be finalized according to the approved quotation.
+                    <br /><br />
+                    Advertising performance is influenced by market conditions, competition, audience, offer quality, creative quality, landing page experience, platform algorithms and advertising budget. No fixed number of leads, sales, revenue or return on ad spend is guaranteed unless specifically agreed in writing.
+                  </div>
+
+                  {/* 17. CLIENT REQUIREMENTS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. CLIENT REQUIREMENTS
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Required advertising account access</li>
+                    <li>Facebook Page &amp; Instagram Account Access, where applicable</li>
+                    <li>Google Ads Account Access, where applicable</li>
+                    <li>LinkedIn Campaign Manager Access, where applicable</li>
+                    <li>Business Information</li>
+                    <li>Product / Service Information</li>
+                    <li>Offer / Pricing Details</li>
+                    <li>Target Location &amp; Audience Information</li>
+                    <li>Website / Landing Page Access, where applicable</li>
+                    <li>Brand Logo &amp; Approved Brand Assets</li>
+                    <li>Required approvals and campaign feedback</li>
+                    <li>Approved advertising budget on selected platforms</li>
+                  </ul>
+
+                  {/* 18. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The campaign will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and campaign scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% management fee advance</li>
+                    <li>Availability of required account access and campaign assets</li>
+                    <li>Availability of the approved advertising budget on selected platforms</li>
+                  </ol>
+                </>
+              )}
+
+              {/* SEO GROWTH EXTRA SECTIONS 14 to 18 */}
+              {templateType === 'seo_local_lead_gen' && (
+                <>
+                  {/* 14. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional SEO Pages</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Blog Writing</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional Location Pages</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Website Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Social Media Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>CRM Integration</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>WhatsApp API / Automation</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 15. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Paid Advertising Budget</li>
+                    <li>Paid Third-Party Tools / Software</li>
+                    <li>Major Website Development</li>
+                    <li>Professional Photography / Video</li>
+                    <li>Paid API / Automation Charges</li>
+                    <li>Guaranteed Rankings, Leads or Revenue</li>
+                    <li>Major website redesign unless specifically quoted</li>
+                    <li>Services outside the approved scope</li>
+                  </ul>
+
+                  {/* 16. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    16. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    SEO performance depends on competition, website quality, content, authority, search demand, technical factors and search-engine algorithms. <strong>No fixed ranking, traffic, lead or revenue guarantee is provided.</strong>
+                    <br /><br />
+                    Final deliverables, keywords, target locations, content quantities, pages, timelines and pricing will be confirmed in the approved quotation.
+                  </div>
+
+                  {/* 17. CLIENT REQUIREMENTS */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    17. CLIENT REQUIREMENTS
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Website / CMS Access, where required</li>
+                    <li>Google Search Console Access</li>
+                    <li>Google Analytics Access, where applicable</li>
+                    <li>Business Information</li>
+                    <li>Products / Services Information</li>
+                    <li>Target Locations</li>
+                    <li>Competitor Information, where available</li>
+                    <li>Brand Assets and Approved Content</li>
+                    <li>Required approvals and feedback</li>
+                  </ul>
+
+                  {/* 18. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    18. ACCEPTANCE
+                  </div>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.7, color: '#334155', margin: '0 0 12px 0' }}>
+                    The SEO project will be considered confirmed upon:
+                  </p>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% advance payment</li>
+                    <li>Availability of required website, analytics and business access</li>
+                    <li>Submission of required business information and content</li>
+                  </ol>
+                </>
+              )}
+
+              {/* SEO GROWTH & CONTENT MARKETING EXTRA SECTIONS 12 to 15 */}
+              {templateType === 'seo_growth_marketing' && (
+                <>
+                  {/* 12. OPTIONAL SERVICES */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    12. OPTIONAL SERVICES
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20, fontSize: 13, border: '1px solid #198754' }}>
+                    <thead>
+                      <tr style={{ background: '#e9f7ef' }}>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Service</th>
+                        <th style={{ border: '1px solid #198754', padding: '8px 12px', textAlign: 'left' }}>Pricing</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Additional SEO Pages</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>SEO Blog Writing</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Landing Page Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Website Development</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Google Ads Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Facebook / Instagram Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>LinkedIn Ads</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                      <tr><td style={{ border: '1px solid #198754', padding: '8px 12px' }}>Social Media Management</td><td style={{ border: '1px solid #198754', padding: '8px 12px', fontWeight: 600 }}>Custom Quote</td></tr>
+                    </tbody>
+                  </table>
+
+                  {/* 13. NOT INCLUDED */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    13. NOT INCLUDED
+                  </div>
+                  <ul style={{ margin: '0 0 20px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Paid Advertising Budget</li>
+                    <li>Paid Third-Party Tools / Software</li>
+                    <li>Major Website Development</li>
+                    <li>Professional Photography / Video</li>
+                    <li>Guaranteed Rankings, Leads or Revenue</li>
+                    <li>Services outside the approved scope</li>
+                  </ul>
+
+                  {/* 14. IMPORTANT NOTE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    14. IMPORTANT NOTE
+                  </div>
+                  <div style={{ background: '#e9f7ef', borderLeft: '5px solid #198754', padding: 16, margin: '15px 0 24px 0', borderRadius: 6, fontSize: 13.5, lineHeight: 1.7 }}>
+                    SEO performance depends on competition, website quality, content, authority, search demand, technical factors and search-engine algorithms. <strong>No fixed ranking, traffic, lead or revenue guarantee is provided.</strong> Final deliverables, keywords, pages and timelines will be confirmed in the approved quotation.
+                  </div>
+
+                  {/* 15. ACCEPTANCE */}
+                  <div style={{ fontSize: 16, fontWeight: 700, marginTop: 24, marginBottom: 10, paddingLeft: 10, borderLeft: '5px solid #198754', color: '#111' }}>
+                    15. ACCEPTANCE
+                  </div>
+                  <ol style={{ margin: '0 0 24px 0', paddingLeft: 20, fontSize: 13.5, color: '#334155', lineHeight: 1.7 }}>
+                    <li>Approval of the proposal and scope</li>
+                    <li>Confirmation through Email, WhatsApp or other official communication</li>
+                    <li>Receipt of the 100% advance payment</li>
+                    <li>Availability of required website, analytics and business access</li>
+                  </ol>
+                </>
+              )}
+
+              <div className="responsive-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 30, borderTop: '2px dashed #cbd5e1', paddingTop: 24, marginTop: 16 }}>
                 <div style={{ background: '#fafafa', border: '1px solid #e2e8f0', padding: 18, borderRadius: 8 }}>
                   <div style={{ fontWeight: 700, color: '#0f172a', marginBottom: 35, fontSize: 13.5 }}>
                     For {displayClientHeading}

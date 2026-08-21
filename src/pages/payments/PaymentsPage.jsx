@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { paymentsAPI, clientsAPI, quotationsAPI } from '../../api';
 import { CreditCard, Plus, CheckCircle2, Clock, AlertTriangle, Edit3, Trash2, Search, DollarSign, ArrowUpRight, Building, Check, RefreshCw, UserCheck, Eye, Printer, FileText, X, Phone } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const PAYMENT_STATUS_TABS = ['all', 'paid', 'partial', 'pending'];
 
@@ -13,10 +14,15 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [paymentPage, setPaymentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editPayment, setEditPayment] = useState(null);
   const [previewReceipt, setPreviewReceipt] = useState(null);
   const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    setPaymentPage(1);
+  }, [search, statusTab]);
 
   // Mode in Update Modal: 'installment' (add to existing) vs 'direct' (edit total)
   const [updateMode, setUpdateMode] = useState('installment');
@@ -290,131 +296,144 @@ export default function PaymentsPage() {
             </button>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Receipt No</th>
-                <th>Client / Company</th>
-                {isAdminOrManager && <th>Created By</th>}
-                <th>Invoice Amt</th>
-                <th>Received Amt</th>
-                <th>Pending Balance</th>
-                <th>Method / Reference</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPayments.map(p => (
-                <tr key={p._id}>
-                  <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.paymentNo}</td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                      {p.client?.name || p.lead?.name || 'Valued Account'}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                      {p.client?.company ? (
-                        <span style={{ color: '#016139', fontWeight: 600 }}><Building size={11} /> {p.client.company}</span>
-                      ) : p.lead?.company ? (
-                        <span><FileText size={11} /> {p.lead.company}</span>
-                      ) : 'Client Ledger'}
-                      {p.quotation?.quotationNo && (
-                        <span style={{ marginLeft: 6, fontSize: 11, background: '#f1f5f9', padding: '1px 6px', borderRadius: 4, color: '#475569', fontWeight: 600 }}>
-                          <FileText size={10} /> {p.quotation.quotationNo}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  {isAdminOrManager && (
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
-                          {p.createdBy?.name || 'Admin'}
-                        </span>
-                        {p.createdBy?.role && (
-                          <span style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: '1px 6px',
-                            borderRadius: 4,
-                            background: p.createdBy.role === 'admin' ? '#E9F8F1' : '#F1F5F9',
-                            color: p.createdBy.role === 'admin' ? '#016139' : '#475569',
-                            textTransform: 'uppercase'
-                          }}>
-                            {p.createdBy.role}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                  )}
-                  <td style={{ fontWeight: 600 }}>₹{p.invoiceAmount?.toLocaleString()}</td>
-                  <td style={{ color: '#016139', fontWeight: 700, fontSize: 14 }}>₹{p.receivedAmount?.toLocaleString()}</td>
-                  <td style={{ color: p.pendingAmount > 0 ? '#DC2626' : '#10B981', fontWeight: 700 }}>
-                    ₹{p.pendingAmount?.toLocaleString()}
-                  </td>
-                  <td>
-                    <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-heading)' }}>
-                      {p.paymentMethod?.replace('_', ' ')}
-                    </div>
-                    {p.reference && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                        Ref: {p.reference}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    <span className={`badge badge-${p.status === 'paid' ? 'won' : p.status === 'partial' ? 'quotation' : 'lost'}`}>
-                      {p.status.toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {/* If Fully Paid: Show PREVIEW button. If Payment Pending: Show UPDATE button */}
-                      {p.status === 'paid' || p.pendingAmount === 0 ? (
-                        <button
-                          className="btn btn-sm"
-                          style={{
-                            background: '#E9F8F1',
-                            color: '#016139',
-                            border: '1px solid #A7F3D0',
-                            padding: '5px 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            fontWeight: 700,
-                          }}
-                          title="View Paid Receipt"
-                          onClick={() => setPreviewReceipt(p)}
-                        >
-                          <Eye size={13} /> Preview
-                        </button>
-                      ) : (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
-                          title="Update Received Payment / Add Installment"
-                          onClick={() => handleOpenEdit(p)}
-                        >
-                          <Edit3 size={13} style={{ color: 'var(--primary)' }} /> Update
-                        </button>
-                      )}
-
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Receipt No</th>
+                    <th>Client / Company</th>
+                    {isAdminOrManager && <th>Created By</th>}
+                    <th>Invoice Amt</th>
+                    <th>Received Amt</th>
+                    <th>Pending Balance</th>
+                    <th>Method / Reference</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPayments
+                    .slice((paymentPage - 1) * 7, paymentPage * 7)
+                    .map(p => (
+                    <tr key={p._id}>
+                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.paymentNo}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                          {p.client?.name || p.lead?.name || 'Valued Account'}
+                        </div>
+                        <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {p.client?.company ? (
+                            <span style={{ color: '#016139', fontWeight: 600 }}><Building size={11} /> {p.client.company}</span>
+                          ) : p.lead?.company ? (
+                            <span><FileText size={11} /> {p.lead.company}</span>
+                          ) : 'Client Ledger'}
+                          {p.quotation?.quotationNo && (
+                            <span style={{ marginLeft: 6, fontSize: 11, background: '#f1f5f9', padding: '1px 6px', borderRadius: 4, color: '#475569', fontWeight: 600 }}>
+                              <FileText size={10} /> {p.quotation.quotationNo}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       {isAdminOrManager && (
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: '#EF4444', padding: '5px 8px' }}
-                          title="Delete Receipt"
-                          onClick={() => handleDelete(p._id, p.paymentNo)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-heading)' }}>
+                              {p.createdBy?.name || 'Admin'}
+                            </span>
+                            {p.createdBy?.role && (
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                background: p.createdBy.role === 'admin' ? '#E9F8F1' : '#F1F5F9',
+                                color: p.createdBy.role === 'admin' ? '#016139' : '#475569',
+                                textTransform: 'uppercase'
+                              }}>
+                                {p.createdBy.role}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <td style={{ fontWeight: 600 }}>₹{p.invoiceAmount?.toLocaleString()}</td>
+                      <td style={{ color: '#016139', fontWeight: 700, fontSize: 14 }}>₹{p.receivedAmount?.toLocaleString()}</td>
+                      <td style={{ color: p.pendingAmount > 0 ? '#DC2626' : '#10B981', fontWeight: 700 }}>
+                        ₹{p.pendingAmount?.toLocaleString()}
+                      </td>
+                      <td>
+                        <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-heading)' }}>
+                          {p.paymentMethod?.replace('_', ' ')}
+                        </div>
+                        {p.reference && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                            Ref: {p.reference}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        <span className={`badge badge-${p.status === 'paid' ? 'won' : p.status === 'partial' ? 'quotation' : 'lost'}`}>
+                          {p.status.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          {/* If Fully Paid: Show PREVIEW button. If Payment Pending: Show UPDATE button */}
+                          {p.status === 'paid' || p.pendingAmount === 0 ? (
+                            <button
+                              className="btn btn-sm"
+                              style={{
+                                background: '#E9F8F1',
+                                color: '#016139',
+                                border: '1px solid #A7F3D0',
+                                padding: '5px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                fontWeight: 700,
+                              }}
+                              title="View Paid Receipt"
+                              onClick={() => setPreviewReceipt(p)}
+                            >
+                              <Eye size={13} /> Preview
+                            </button>
+                          ) : (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}
+                              title="Update Received Payment / Add Installment"
+                              onClick={() => handleOpenEdit(p)}
+                            >
+                              <Edit3 size={13} style={{ color: 'var(--primary)' }} /> Update
+                            </button>
+                          )}
+
+                          {isAdminOrManager && (
+                            <button
+                              className="btn btn-ghost btn-sm"
+                              style={{ color: '#EF4444', padding: '5px 8px' }}
+                              title="Delete Receipt"
+                              onClick={() => handleDelete(p._id, p.paymentNo)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={paymentPage}
+              totalPages={Math.ceil(filteredPayments.length / 7) || 1}
+              totalItems={filteredPayments.length}
+              itemsPerPage={7}
+              onPageChange={setPaymentPage}
+            />
+          </>
         )}
       </div>
 

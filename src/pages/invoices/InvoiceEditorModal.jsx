@@ -7,23 +7,48 @@ import { invoicesAPI, clientsAPI } from '../../api';
 import Swal from 'sweetalert2';
 
 const DEFAULT_HIVERIFT_LOGO = '/logo.png';
+const DEFAULT_HIVERIFT_FROM = `HiveRift Softwares Pvt Ltd
+GSTIN: XXXXXXXXXXXXXXX
+info@hiverift.com
++91 9667106291`;
+
+const DEFAULT_HIVERIFT_NOTES = `Notes: Thank you for choosing HiveRift Softwares Pvt Ltd. We appreciate your business and look forward to continuing our association.`;
+
+export const PAYMENT_TERMS_CONFIG = {
+  due_on_receipt: {
+    label: 'Due on Receipt',
+    text: 'Payment is due upon receipt of this invoice. Please make the payment to the official bank account mentioned below.',
+    days: 0,
+  },
+  credit_15: {
+    label: '15 Days Credit',
+    text: 'Payment is due within 15 days from the invoice date. Please transfer the payment to the official bank account mentioned below.',
+    days: 15,
+  },
+  advance: {
+    label: 'Advance Payment',
+    text: 'This invoice represents an advance payment for the agreed services. Project work will proceed according to the agreed scope and payment schedule.',
+    days: 0,
+  },
+};
 
 export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onSaved, clients = [] }) {
   const [logo, setLogo] = useState(DEFAULT_HIVERIFT_LOGO);
   const [invoiceNo, setInvoiceNo] = useState('');
-  const [from, setFrom] = useState('HiveRift Softwares Pvt Ltd\ninfo@hiverift.com\n+91 9667106291');
+  const [from, setFrom] = useState(DEFAULT_HIVERIFT_FROM);
   const [billTo, setBillTo] = useState('');
   const [shipTo, setShipTo] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState('');
+  const [paymentTermKey, setPaymentTermKey] = useState('due_on_receipt');
   const [currency, setCurrency] = useState('₹');
 
   const [items, setItems] = useState([
     { description: '', quantity: 1, rate: 0, amount: 0 },
   ]);
 
-  const [notes, setNotes] = useState('Thank you for your business!');
-  const [terms, setTerms] = useState('Payment is due within 15 days of invoice date. Please transfer payment to our registered company account.');
+  const [notes, setNotes] = useState(DEFAULT_HIVERIFT_NOTES);
+  const [terms, setTerms] = useState(PAYMENT_TERMS_CONFIG.due_on_receipt.text);
 
   // Tax, Discount, Shipping
   const [taxRate, setTaxRate] = useState(0);
@@ -43,15 +68,18 @@ export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onS
     if (invoiceToEdit) {
       setLogo(invoiceToEdit.logo || DEFAULT_HIVERIFT_LOGO);
       setInvoiceNo(invoiceToEdit.invoiceNo || '');
-      setFrom(invoiceToEdit.from || 'HiveRift Softwares Pvt Ltd\ninfo@hiverift.com\n+91 9667106291');
+      setFrom(invoiceToEdit.from || DEFAULT_HIVERIFT_FROM);
       setBillTo(invoiceToEdit.billTo || '');
       setShipTo(invoiceToEdit.shipTo || '');
-      setDate(invoiceToEdit.date ? new Date(invoiceToEdit.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+      const d = invoiceToEdit.date ? new Date(invoiceToEdit.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      setDate(d);
       setDueDate(invoiceToEdit.dueDate ? new Date(invoiceToEdit.dueDate).toISOString().split('T')[0] : '');
+      const termKey = invoiceToEdit.paymentTermKey || 'due_on_receipt';
+      setPaymentTermKey(termKey);
       setCurrency(invoiceToEdit.currency || '₹');
       setItems(invoiceToEdit.items && invoiceToEdit.items.length > 0 ? invoiceToEdit.items : [{ description: '', quantity: 1, rate: 0, amount: 0 }]);
-      setNotes(invoiceToEdit.notes || '');
-      setTerms(invoiceToEdit.terms || '');
+      setNotes(invoiceToEdit.notes || DEFAULT_HIVERIFT_NOTES);
+      setTerms(invoiceToEdit.terms || PAYMENT_TERMS_CONFIG[termKey]?.text || PAYMENT_TERMS_CONFIG.due_on_receipt.text);
       setTaxRate(invoiceToEdit.taxRate || 0);
       setShowTax((invoiceToEdit.taxRate || 0) > 0);
       setDiscountType(invoiceToEdit.discountType || 'percentage');
@@ -63,17 +91,19 @@ export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onS
       setSelectedClient(invoiceToEdit.client?._id || invoiceToEdit.client || '');
     } else {
       // New Invoice defaults
+      const todayStr = new Date().toISOString().split('T')[0];
       setLogo(DEFAULT_HIVERIFT_LOGO);
       setInvoiceNo(`INV-${Math.floor(1000 + Math.random() * 9000)}`);
-      setFrom('HiveRift Softwares Pvt Ltd\ninfo@hiverift.com\n+91 9667106291');
+      setFrom(DEFAULT_HIVERIFT_FROM);
       setBillTo('');
       setShipTo('');
-      setDate(new Date().toISOString().split('T')[0]);
-      setDueDate('');
+      setDate(todayStr);
+      setDueDate(todayStr);
+      setPaymentTermKey('due_on_receipt');
       setCurrency('₹');
       setItems([{ description: '', quantity: 1, rate: 0, amount: 0 }]);
-      setNotes('Thank you for your business!');
-      setTerms('Payment is due within 15 days of invoice date. Please transfer payment to our registered company account.');
+      setNotes(DEFAULT_HIVERIFT_NOTES);
+      setTerms(PAYMENT_TERMS_CONFIG.due_on_receipt.text);
       setTaxRate(0);
       setShowTax(false);
       setDiscountType('percentage');
@@ -85,6 +115,21 @@ export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onS
       setSelectedClient('');
     }
   }, [invoiceToEdit, isOpen]);
+
+  const handlePaymentTermChange = (key) => {
+    setPaymentTermKey(key);
+    const cfg = PAYMENT_TERMS_CONFIG[key];
+    if (cfg) {
+      setTerms(cfg.text);
+      if (cfg.days > 0) {
+        const baseDate = date ? new Date(date) : new Date();
+        baseDate.setDate(baseDate.getDate() + cfg.days);
+        setDueDate(baseDate.toISOString().split('T')[0]);
+      } else {
+        setDueDate(date);
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -176,6 +221,7 @@ export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onS
         shipTo: shipTo.trim() || undefined,
         date,
         dueDate: dueDate || undefined,
+        paymentTermKey,
         currency,
         items: items.map((i) => ({
           description: i.description.trim(),
@@ -571,6 +617,30 @@ export default function InvoiceEditorModal({ isOpen, onClose, invoiceToEdit, onS
                   onChange={(e) => setDueDate(e.target.value)}
                   style={{ padding: '7px 10px', fontSize: 13, border: '1px solid #cbd5e1', borderRadius: 6, outline: 'none', color: '#0f172a' }}
                 />
+              </div>
+
+              {/* Payment Terms Selector */}
+              <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600, textAlign: 'right' }}>Terms Type</span>
+                <select
+                  value={paymentTermKey}
+                  onChange={(e) => handlePaymentTermChange(e.target.value)}
+                  style={{
+                    padding: '7px 10px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    border: '1px solid #cbd5e1',
+                    borderRadius: 6,
+                    outline: 'none',
+                    color: '#016139',
+                    background: '#f8fafc',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {Object.entries(PAYMENT_TERMS_CONFIG).map(([k, v]) => (
+                    <option key={k} value={k}>{v.label}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

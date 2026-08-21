@@ -5,6 +5,7 @@ import {
   FolderKanban, User, AlertCircle, CheckCircle2, X
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const TASK_STATUSES = ['all', 'todo', 'in_progress', 'review', 'completed', 'overdue'];
 
@@ -14,6 +15,11 @@ export default function TasksPage() {
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
+  const [taskPage, setTaskPage] = useState(1);
+
+  useEffect(() => {
+    setTaskPage(1);
+  }, [search, statusTab, priorityFilter]);
   const [previewTask, setPreviewTask] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [projects, setProjects] = useState([]);
@@ -234,97 +240,110 @@ export default function TasksPage() {
             <p>Tasks assigned to you or your team will appear here.</p>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Task Title</th>
-                <th>Project</th>
-                <th>Assigned To</th>
-                <th>Priority</th>
-                <th>Due Date</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTasks.map(t => (
-                <tr key={t._id}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                    <div>{t.title}</div>
-                    {t.description && (
-                      <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 280, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {t.description}
-                      </div>
-                    )}
-                  </td>
-                  <td>
-                    {t.project ? (
-                      <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{t.project.name}</span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>N/A</span>
-                    )}
-                  </td>
-                  <td>
-                    {t.assignedTo ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <User size={13} style={{ color: 'var(--text-muted)' }} />
-                        <span style={{ fontSize: 13, fontWeight: 500 }}>{t.assignedTo.name}</span>
-                      </div>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>
-                    )}
-                  </td>
-                  <td>{getPriorityBadge(t.priority)}</td>
-                  <td style={{ fontSize: 13, fontWeight: t.status === 'overdue' ? 700 : 400, color: t.status === 'overdue' ? 'var(--red)' : 'var(--text-body)' }}>
-                    {new Date(t.dueDate).toLocaleDateString()}
-                  </td>
-                  <td>
-                    <select
-                      className="form-select"
-                      style={{ padding: '4px 8px', fontSize: 12, width: 'auto', fontWeight: 600 }}
-                      value={t.status}
-                      onChange={e => handleStatusChange(t._id, e.target.value)}
-                    >
-                      <option value="todo">TO DO</option>
-                      <option value="in_progress">IN PROGRESS</option>
-                      <option value="review">REVIEW</option>
-                      <option value="completed">COMPLETED</option>
-                    </select>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {/* Preview Button */}
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                        onClick={() => setPreviewTask(t)}
-                        title="Preview Full Task Details"
-                      >
-                        <Eye size={13} /> Preview
-                      </button>
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Task Title</th>
+                    <th>Project</th>
+                    <th>Assigned To</th>
+                    <th>Priority</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTasks
+                    .slice((taskPage - 1) * 7, taskPage * 7)
+                    .map(t => (
+                    <tr key={t._id}>
+                      <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                        <div>{t.title}</div>
+                        {t.description && (
+                          <div style={{ fontSize: 12, color: 'var(--text-muted)', maxWidth: 280, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {t.description}
+                          </div>
+                        )}
+                      </td>
+                      <td>
+                        {t.project ? (
+                          <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{t.project.name}</span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>N/A</span>
+                        )}
+                      </td>
+                      <td>
+                        {t.assignedTo ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <User size={13} style={{ color: 'var(--text-muted)' }} />
+                            <span style={{ fontSize: 13, fontWeight: 500 }}>{t.assignedTo.name}</span>
+                          </div>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>
+                        )}
+                      </td>
+                      <td>{getPriorityBadge(t.priority)}</td>
+                      <td style={{ fontSize: 13, fontWeight: t.status === 'overdue' ? 700 : 400, color: t.status === 'overdue' ? 'var(--red)' : 'var(--text-body)' }}>
+                        {new Date(t.dueDate).toLocaleDateString()}
+                      </td>
+                      <td>
+                        <select
+                          className="form-select"
+                          style={{ padding: '4px 8px', fontSize: 12, width: 'auto', fontWeight: 600 }}
+                          value={t.status}
+                          onChange={e => handleStatusChange(t._id, e.target.value)}
+                        >
+                          <option value="todo">TO DO</option>
+                          <option value="in_progress">IN PROGRESS</option>
+                          <option value="review">REVIEW</option>
+                          <option value="completed">COMPLETED</option>
+                        </select>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {/* Preview Button */}
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            onClick={() => setPreviewTask(t)}
+                            title="Preview Full Task Details"
+                          >
+                            <Eye size={13} /> Preview
+                          </button>
 
-                      {/* Delete Button */}
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ color: 'var(--red)', padding: '4px 6px' }}
-                        onClick={() => handleDeleteTask(t._id, t.title)}
-                        title="Delete Task"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          {/* Delete Button */}
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--red)', padding: '4px 6px' }}
+                            onClick={() => handleDeleteTask(t._id, t.title)}
+                            title="Delete Task"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={taskPage}
+              totalPages={Math.ceil(filteredTasks.length / 7) || 1}
+              totalItems={filteredTasks.length}
+              itemsPerPage={7}
+              onPageChange={setTaskPage}
+            />
+          </>
         )}
       </div>
 

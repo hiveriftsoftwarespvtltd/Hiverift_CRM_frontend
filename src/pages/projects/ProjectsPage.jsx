@@ -3,6 +3,7 @@ import { projectsAPI, clientsAPI, usersAPI } from '../../api';
 import { Plus, Search, FolderKanban, Calendar, User, Eye, CheckSquare, Trash2, UploadCloud, Paperclip, FileText, X, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const PROJECT_STATUSES = ['all', 'assigned', 'started', 'in_progress', 'review', 'client_review', 'completed', 'on_hold', 'cancelled'];
 const DEPARTMENTS = ['digital_marketing', 'development', 'design', 'other'];
@@ -14,9 +15,14 @@ export default function ProjectsPage() {
   const [statusTab, setStatusTab] = useState('all');
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('');
+  const [projectPage, setProjectPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [clients, setClients] = useState([]);
   const [techUsers, setTechUsers] = useState([]);
+
+  useEffect(() => {
+    setProjectPage(1);
+  }, [search, statusTab, deptFilter]);
 
   const [formData, setFormData] = useState({
     name: '', client: '', department: 'development', service: 'Web Development', assignedTo: '', startDate: new Date().toISOString().split('T')[0], deadline: '', requirements: '', attachments: []
@@ -202,58 +208,71 @@ export default function ProjectsPage() {
             <p>Assign technical projects to Development & Digital Marketing teams.</p>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Project ID</th>
-                <th>Project Name</th>
-                <th>Client</th>
-                <th>Department</th>
-                <th>Assigned Tech</th>
-                <th>Progress</th>
-                <th>Deadline</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProjects.map(p => (
-                <tr key={p._id} onClick={() => navigate(`/projects/${p._id}`)}>
-                  <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.projectId}</td>
-                  <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{p.name}</td>
-                  <td>{p.client?.name || 'N/A'}</td>
-                  <td>
-                    <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-body)' }}>
-                      {p.department?.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td>{p.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div className="progress-bar-wrap" style={{ width: 80 }}>
-                        <div className="progress-bar-fill" style={{ width: `${p.progress}%` }} />
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700 }}>{p.progress}%</span>
-                    </div>
-                  </td>
-                  <td style={{ fontSize: 13 }}>{new Date(p.deadline).toLocaleDateString()}</td>
-                  <td>
-                    <span className={`badge badge-${p.status}`}>
-                      {p.status.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </td>
-                  <td>
-                    <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${p._id}`); }}>
-                      <Eye size={15} />
-                    </button>
-                    <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={(e) => handleDelete(p._id, p.name, e)}>
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Project ID</th>
+                    <th>Project Name</th>
+                    <th>Client</th>
+                    <th>Department</th>
+                    <th>Assigned Tech</th>
+                    <th>Progress</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProjects
+                    .slice((projectPage - 1) * 7, projectPage * 7)
+                    .map(p => (
+                    <tr key={p._id} onClick={() => navigate(`/projects/${p._id}`)}>
+                      <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{p.projectId}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>{p.name}</td>
+                      <td>{p.client?.name || 'N/A'}</td>
+                      <td>
+                        <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--text-body)' }}>
+                          {p.department?.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td>{p.assignedTo?.name || <span style={{ color: 'var(--text-muted)' }}>Unassigned</span>}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="progress-bar-wrap" style={{ width: 80 }}>
+                            <div className="progress-bar-fill" style={{ width: `${p.progress}%` }} />
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 700 }}>{p.progress}%</span>
+                        </div>
+                      </td>
+                      <td style={{ fontSize: 13 }}>{new Date(p.deadline).toLocaleDateString()}</td>
+                      <td>
+                        <span className={`badge badge-${p.status}`}>
+                          {p.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${p._id}`); }}>
+                          <Eye size={15} />
+                        </button>
+                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)' }} onClick={(e) => handleDelete(p._id, p.name, e)}>
+                          <Trash2 size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={projectPage}
+              totalPages={Math.ceil(filteredProjects.length / 7) || 1}
+              totalItems={filteredProjects.length}
+              itemsPerPage={7}
+              onPageChange={setProjectPage}
+            />
+          </>
         )}
       </div>
 

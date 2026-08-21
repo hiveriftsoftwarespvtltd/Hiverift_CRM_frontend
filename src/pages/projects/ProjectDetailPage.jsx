@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { projectsAPI, tasksAPI, usersAPI } from '../../api';
 import { ArrowLeft, CheckSquare, Plus, Calendar, User, FolderKanban, Clock, Send, ShieldCheck, Tag, RefreshCw, CheckCircle2, Paperclip, FileText, UploadCloud, Download, Trash2, X } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const PROJECT_STATUSES = ['assigned', 'started', 'in_progress', 'review', 'client_review', 'completed', 'on_hold', 'cancelled'];
 const TASK_PRIORITIES = ['low', 'medium', 'high', 'critical'];
@@ -18,6 +19,7 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [updatingProgress, setUpdatingProgress] = useState(false);
+  const [taskPage, setTaskPage] = useState(1);
 
   // Create Task Modal
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -326,42 +328,55 @@ export default function ProjectDetailPage() {
             </div>
 
             {tasks.length === 0 ? (
-              <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No tasks created for this project yet.</p>
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 20px' }}>No tasks created for this project yet.</p>
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Task Title</th>
-                    <th>Assigned To</th>
-                    <th>Priority</th>
-                    <th>Due Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.map(t => (
-                    <tr key={t._id}>
-                      <td style={{ fontWeight: 600 }}>{t.title}</td>
-                      <td>{t.assignedTo?.name || 'Unassigned'}</td>
-                      <td><span className={`badge badge-${t.priority}`}>{t.priority.toUpperCase()}</span></td>
-                      <td style={{ fontSize: 12 }}>{new Date(t.dueDate).toLocaleDateString()}</td>
-                      <td>
-                        <select
-                          className="form-select"
-                          style={{ padding: '3px 8px', fontSize: 12, width: 'auto', fontWeight: 600 }}
-                          value={t.status}
-                          onChange={e => handleTaskStatusChange(t._id, e.target.value)}
-                        >
-                          <option value="todo">TO DO</option>
-                          <option value="in_progress">IN PROGRESS</option>
-                          <option value="review">REVIEW</option>
-                          <option value="completed">COMPLETED</option>
-                        </select>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="table-wrapper">
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Task Title</th>
+                        <th>Assigned To</th>
+                        <th>Priority</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks
+                        .slice((taskPage - 1) * 7, taskPage * 7)
+                        .map(t => (
+                        <tr key={t._id}>
+                          <td style={{ fontWeight: 600 }}>{t.title}</td>
+                          <td>{t.assignedTo?.name || 'Unassigned'}</td>
+                          <td><span className={`badge badge-${t.priority}`}>{t.priority.toUpperCase()}</span></td>
+                          <td style={{ fontSize: 12 }}>{new Date(t.dueDate).toLocaleDateString()}</td>
+                          <td>
+                            <select
+                              className="form-select"
+                              style={{ padding: '3px 8px', fontSize: 12, width: 'auto', fontWeight: 600 }}
+                              value={t.status}
+                              onChange={e => handleTaskStatusChange(t._id, e.target.value)}
+                            >
+                              <option value="todo">TO DO</option>
+                              <option value="in_progress">IN PROGRESS</option>
+                              <option value="review">REVIEW</option>
+                              <option value="completed">COMPLETED</option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <PaginationControls
+                  currentPage={taskPage}
+                  totalPages={Math.ceil(tasks.length / 7) || 1}
+                  totalItems={tasks.length}
+                  itemsPerPage={7}
+                  onPageChange={setTaskPage}
+                />
+              </div>
             )}
           </div>
 

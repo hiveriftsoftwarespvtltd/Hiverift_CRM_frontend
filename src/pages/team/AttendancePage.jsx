@@ -5,7 +5,7 @@ import {
   CalendarCheck, Clock, CheckCircle2, AlertTriangle, Users, Calendar,
   Download, Filter, ArrowUpDown, ChevronLeft, ChevronRight, UserCheck, ShieldAlert,
   Search, Briefcase, Code, Megaphone, UserSquare2, X, ArrowLeft, BarChart3,
-  Mail, Eye, Crown, CheckCircle, Coffee
+  Mail, Eye, Crown, CheckCircle, Coffee, RotateCcw
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -44,6 +44,19 @@ export default function AttendancePage() {
   const [monthlyReport, setMonthlyReport] = useState([]);
   const [todaySummary, setTodaySummary] = useState({ total: 0, present: 0, late: 0, halfDay: 0 });
   const [loading, setLoading] = useState(true);
+
+  // Pagination State (7 items per page)
+  const ITEMS_PER_PAGE = 7;
+  const [dailyPage, setDailyPage] = useState(1);
+  const [empMonthPage, setEmpMonthPage] = useState(1);
+  const [monthlyReportPage, setMonthlyReportPage] = useState(1);
+
+  // Reset pagination on filter or view change
+  useEffect(() => {
+    setDailyPage(1);
+    setEmpMonthPage(1);
+    setMonthlyReportPage(1);
+  }, [selectedDate, selectedMonth, selectedYear, statusFilter, deptFilter, search, selectedEmployee, viewMode]);
 
   // My personal attendance for quick checkin status
   const [myTodayAttendance, setMyTodayAttendance] = useState(null);
@@ -165,15 +178,17 @@ export default function AttendancePage() {
     const totalMinutes = hours * 60 + minutes;
     const shiftStartMinutes = 10 * 60; // 10:00 AM (600 mins)
 
-    if (totalMinutes > shiftStartMinutes) {
-      const diff = totalMinutes - shiftStartMinutes;
+    const isLateCalc = totalMinutes > shiftStartMinutes || a.status === 'late';
+
+    if (isLateCalc) {
+      const diff = totalMinutes > shiftStartMinutes ? totalMinutes - shiftStartMinutes : 0;
       const diffH = Math.floor(diff / 60);
       const diffM = diff % 60;
-      const duration = diffH > 0 ? `${diffH}h ${diffM}m late` : `${diffM}m late`;
+      const duration = diff > 0 ? (diffH > 0 ? `${diffH}h ${diffM}m late` : `${diffM}m late`) : (a.lateDuration || 'Late');
       return {
         isLate: true,
         label: a.lateDuration && a.lateDuration !== 'On Time' ? a.lateDuration : duration,
-        status: totalMinutes >= 13 * 60 ? 'HALF DAY' : 'LATE',
+        status: (totalMinutes >= 13 * 60 || a.status === 'half_day') ? 'HALF DAY' : 'PRESENT (LATE)',
         badgeClass: 'badge-quotation',
         color: '#D97706',
       };
@@ -196,6 +211,234 @@ export default function AttendancePage() {
     if (h === 0) return `${m} mins`;
     if (m === 0) return `${h} hrs`;
     return `${h}h ${m}m (${Number(hoursDecimal).toFixed(2)} hrs)`;
+  };
+
+  const handleEditOvertime = async (att) => {
+    const empName = att.employee?.name || user?.name || 'Staff';
+    const { value: extraText } = await Swal.fire({
+      title: 'Overtime',
+      text: `Enter overtime worked after 07:00 PM cutoff for ${empName}:`,
+      input: 'text',
+      inputValue: att.overtime || '',
+      inputPlaceholder: 'e.g. 30 mins, 50 mins, 2 hours, 7:45 PM',
+      showCancelButton: true,
+      confirmButtonText: 'Save Overtime',
+      confirmButtonColor: '#016139',
+      cancelButtonColor: '#64748b',
+    });
+
+    if (extraText !== undefined) {
+      try {
+        await attendanceAPI.updateOvertime(att._id, { overtime: extraText.trim() });
+        Swal.fire({
+          icon: 'success',
+          title: 'Overtime Saved',
+          text: extraText.trim() ? `Overtime set to "${extraText.trim()}".` : 'Overtime cleared.',
+          timer: 1500,
+          showConfirmButton: false,
+          iconColor: '#016139',
+        });
+        fetchData();
+        if (selectedEmployee) {
+          fetchEmployeeMonthLogs(selectedEmployee._id || selectedEmployee.id);
+        }
+      } catch (err) {
+        Swal.fire('Error', err.response?.data?.message || 'Failed to update overtime', 'error');
+      }
+    }
+  };
+
+  const isSuperAdminOnly = user?.role === 'admin';
+
+  const handleResetOrEditAttendance = async (att) => {
+    const empName = att.employee?.name || user?.name || 'Employee';
+    const dateStr = new Date(att.date).toLocaleDateString();
+    const checkInStr = att.checkIn ? new Date(att.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '10:00 AM';
+    const checkOutStr = att.checkOut ? new Date(att.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const currentPunctuality = calcPunctuality(att).status;
+
+    const result = await Swal.fire({
+      title: `Attendance Override: ${empName}`,
+      html: `
+        <div style="text-align: left; font-size: 13px; font-family: system-ui, -apple-system, sans-serif;">
+          <div style="background: #F8FAFC; padding: 10px 14px; border-radius: 8px; border: 1px solid #E2E8F0; margin-bottom: 14px; line-height: 1.6;">
+            <div><strong>Date:</strong> ${dateStr}</div>
+            <div><strong>Current Logged Check-In:</strong> ${att.checkIn ? checkInStr : 'Not Checked In'} (${currentPunctuality})</div>
+            ${att.checkOut ? `<div><strong>Current Check-Out:</strong> ${checkOutStr}</div>` : ''}
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 700; margin-bottom: 4px; color: #1E293B;">Correct Check-In Time (Manual Input):</label>
+            <input id="swal-checkin" class="swal2-input" value="${checkInStr}" placeholder="e.g. 10:00 AM, 09:55 AM, 11:10 AM" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 13px; padding: 8px 12px; height: 38px;">
+            <span style="font-size: 11px; color: #64748B;">Enter 10:00 AM or earlier to mark as On Time.</span>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 700; margin-bottom: 4px; color: #1E293B;">Check-Out Time (Optional Manual Input):</label>
+            <input id="swal-checkout" class="swal2-input" value="${checkOutStr}" placeholder="e.g. 07:00 PM (Leave blank if shift in progress)" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 13px; padding: 8px 12px; height: 38px;">
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 700; margin-bottom: 4px; color: #1E293B;">Punctuality Status Override:</label>
+            <select id="swal-status" class="swal2-input" style="margin: 0; width: 100%; box-sizing: border-box; font-size: 13px; padding: 6px 10px; height: 38px;">
+              <option value="auto" selected>Auto-Calculate (On Time if <= 10:00 AM)</option>
+              <option value="present">PRESENT (On Time)</option>
+              <option value="late">PRESENT (LATE)</option>
+              <option value="half_day">HALF DAY</option>
+            </select>
+          </div>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: 'Save & Recalculate',
+      denyButtonText: 'Reset & Delete Log',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#016139',
+      denyButtonColor: '#DC2626',
+      preConfirm: () => {
+        return {
+          checkInTime: document.getElementById('swal-checkin')?.value || '',
+          checkOutTime: document.getElementById('swal-checkout')?.value || '',
+          status: document.getElementById('swal-status')?.value || 'auto',
+        };
+      }
+    });
+
+    if (result.isConfirmed && result.value) {
+      // Save & Recalculate
+      const { checkInTime, checkOutTime, status } = result.value;
+      try {
+        await attendanceAPI.editTime(att._id, { checkInTime, checkOutTime, status });
+        Swal.fire({
+          icon: 'success',
+          title: 'Attendance Saved & Recalculated!',
+          text: `Check-in updated to ${checkInTime}. Working hours and status recalculated.`,
+          timer: 1800,
+          showConfirmButton: false,
+          iconColor: '#016139',
+        });
+        fetchData();
+        if (selectedEmployee) fetchEmployeeMonthLogs(selectedEmployee._id || selectedEmployee.id);
+      } catch (err) {
+        Swal.fire('Error', err.response?.data?.message || 'Failed to save attendance', 'error');
+      }
+    } else if (result.isDenied) {
+      // Reset & Delete Log
+      const confirmReset = await Swal.fire({
+        title: 'Reset Attendance Log?',
+        text: `This will delete the check-in log for ${empName} on ${dateStr}. They will be able to check in freshly.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, Reset & Clear Log',
+        confirmButtonColor: '#DC2626',
+      });
+
+      if (confirmReset.isConfirmed) {
+        try {
+          await attendanceAPI.resetRecord(att._id);
+          Swal.fire({
+            icon: 'success',
+            title: 'Log Reset Successfully',
+            text: `Attendance log for ${empName} has been cleared.`,
+            timer: 1600,
+            showConfirmButton: false,
+          });
+          fetchData();
+          if (selectedEmployee) fetchEmployeeMonthLogs(selectedEmployee._id || selectedEmployee.id);
+        } catch (err) {
+          Swal.fire('Error', err.response?.data?.message || 'Failed to reset attendance log', 'error');
+        }
+      }
+    }
+  };
+
+  const renderPaginationControls = (currentPage, totalPages, totalItems, onPageChange) => {
+    if (totalItems <= 7) return null;
+
+    const startItem = (currentPage - 1) * 7 + 1;
+    const endItem = Math.min(currentPage * 7, totalItems);
+
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 18px',
+          background: 'var(--surface-card, #FFFFFF)',
+          borderTop: '1px solid var(--border, #E2E8F0)',
+          borderRadius: '0 0 12px 12px',
+          marginTop: -1,
+          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+        }}
+      >
+        <div style={{ fontSize: 13, color: 'var(--text-secondary, #64748B)', fontWeight: 600 }}>
+          Showing <strong>{startItem}</strong> to <strong>{endItem}</strong> of <strong>{totalItems}</strong> entries
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 12px',
+              fontSize: 12,
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              opacity: currentPage === 1 ? 0.5 : 1,
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+            }}
+            disabled={currentPage === 1}
+            onClick={() => onPageChange(currentPage - 1)}
+          >
+            <ChevronLeft size={14} /> Previous
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+            <button
+              key={p}
+              type="button"
+              className={`btn btn-sm ${p === currentPage ? 'btn-primary' : 'btn-secondary'}`}
+              style={{
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 700,
+                minWidth: 32,
+                background: p === currentPage ? '#016139' : '#FFFFFF',
+                color: p === currentPage ? '#FFFFFF' : 'var(--text-main, #1E293B)',
+                border: p === currentPage ? '1px solid #016139' : '1px solid var(--border, #CBD5E1)',
+              }}
+              onClick={() => onPageChange(p)}
+            >
+              {p}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            style={{
+              padding: '4px 12px',
+              fontSize: 12,
+              fontWeight: 700,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+            }}
+            disabled={currentPage === totalPages}
+            onClick={() => onPageChange(currentPage + 1)}
+          >
+            Next <ChevronRight size={14} />
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const renderDepartmentBadge = (role, department) => {
@@ -319,7 +562,7 @@ export default function AttendancePage() {
   // Export to CSV for HR / Payroll
   const exportToCSV = () => {
     if (selectedEmployee) {
-      const headers = ['Date', 'Day', 'Employee Name', 'Department / Role', 'Check In', 'Late Duration', 'Check Out', 'Working Hours', 'Status'];
+      const headers = ['Date', 'Day', 'Employee Name', 'Department / Role', 'Check In', 'Late Duration', 'Check Out', 'Working Hours', 'Overtime', 'Status'];
       const rows = employeeMonthLogs.map(a => [
         new Date(a.date).toLocaleDateString(),
         new Date(a.date).toLocaleDateString('en-US', { weekday: 'short' }),
@@ -329,7 +572,8 @@ export default function AttendancePage() {
         a.lateDuration || 'On Time',
         a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress',
         a.workingHours ? `${a.workingHours} hrs` : '-',
-        a.status.toUpperCase()
+        a.overtime || '-',
+        a.status === 'late' ? 'PRESENT (LATE)' : (a.status?.toUpperCase() || 'PRESENT')
       ]);
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.map(i => `"${i}"`).join(','))].join('\n');
       const encodedUri = encodeURI(csvContent);
@@ -340,7 +584,7 @@ export default function AttendancePage() {
       link.click();
       document.body.removeChild(link);
     } else if (viewMode === 'daily') {
-      const headers = ['Date', 'Employee Name', 'Department / Role', 'Email', 'Check In', 'Late Duration', 'Check Out', 'Working Hours', 'Status'];
+      const headers = ['Date', 'Employee Name', 'Department / Role', 'Email', 'Check In', 'Late Duration', 'Check Out', 'Working Hours', 'Overtime', 'Status'];
       const rows = attendances.map(a => [
         new Date(a.date).toLocaleDateString(),
         a.employee?.name || user?.name,
@@ -350,7 +594,8 @@ export default function AttendancePage() {
         a.lateDuration || 'On Time',
         a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress',
         a.workingHours ? `${a.workingHours} hrs` : '-',
-        a.status.toUpperCase()
+        a.overtime || '-',
+        a.status === 'late' ? 'PRESENT (LATE)' : (a.status?.toUpperCase() || 'PRESENT')
       ]);
       const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.map(i => `"${i}"`).join(','))].join('\n');
       const encodedUri = encodeURI(csvContent);
@@ -770,118 +1015,184 @@ export default function AttendancePage() {
               <p>No check-in activity recorded during this selected month.</p>
             </div>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date & Day</th>
-                  <th>Shift Timing</th>
-                  <th>Check In Time</th>
-                  <th>Punctuality Calculation</th>
-                  <th>Breaks Taken</th>
-                  <th>Check Out Time</th>
-                  <th>Total Working Hours</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {employeeMonthLogs.map(a => {
-                  const checkInFormatted = a.checkIn
-                    ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : '-';
-                  const checkOutFormatted = a.checkOut
-                    ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'In Progress';
-
-                  const dayName = new Date(a.date).toLocaleDateString('en-US', { weekday: 'short' });
-                  const punctuality = calcPunctuality(a);
-
-                  return (
-                    <tr key={a._id}>
-                      <td>
-                        <div style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
-                          {new Date(a.date).toLocaleDateString()}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          {dayName}
-                        </div>
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
-                      <td style={{ fontWeight: 700, color: punctuality.color }}>
-                        {checkInFormatted}
-                      </td>
-                      <td>
-                        {punctuality.isLate ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            background: '#FFF7ED',
-                            color: '#C2410C',
-                            border: '1px solid #FFEDD5',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}>
-                            <Clock size={11} /> {punctuality.label}
-                          </span>
-                        ) : (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            background: '#E9F8F1',
-                            color: '#016139',
-                            border: '1px solid #A3E6C5',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}>
-                            On Time
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {a.activeBreak ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
-                            <Coffee size={11} /> {a.activeBreak.type} (Live)
-                          </span>
-                        ) : a.totalBreakMinutes > 0 ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
-                            color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
-                            border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
-                            fontWeight: 700,
-                            fontSize: 11
-                          }}>
-                            <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
-                        )}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
-                      <td>
-                        <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
-                          {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${punctuality.badgeClass}`}>
-                          {punctuality.status}
-                        </span>
-                      </td>
+            <>
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Date & Day</th>
+                      <th>Shift Timing</th>
+                      <th>Check In Time</th>
+                      <th>Punctuality Calculation</th>
+                      <th>Breaks Taken</th>
+                      <th>Check Out Time</th>
+                      <th>Total Working Hours</th>
+                      <th>Overtime</th>
+                      <th>Status</th>
+                      {isSuperAdminOnly && <th>Reset / Fix</th>}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {employeeMonthLogs
+                      .slice((empMonthPage - 1) * ITEMS_PER_PAGE, empMonthPage * ITEMS_PER_PAGE)
+                      .map(a => {
+                      const checkInFormatted = a.checkIn
+                        ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '-';
+                      const checkOutFormatted = a.checkOut
+                        ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'In Progress';
+
+                      const dayName = new Date(a.date).toLocaleDateString('en-US', { weekday: 'short' });
+                      const punctuality = calcPunctuality(a);
+
+                      return (
+                        <tr key={a._id}>
+                          <td>
+                            <div style={{ fontWeight: 700, color: 'var(--text-heading)' }}>
+                              {new Date(a.date).toLocaleDateString()}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 600 }}>
+                              {dayName}
+                            </div>
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
+                          <td style={{ fontWeight: 700, color: punctuality.color }}>
+                            {checkInFormatted}
+                          </td>
+                          <td>
+                            {punctuality.isLate ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                background: '#FFF7ED',
+                                color: '#C2410C',
+                                border: '1px solid #FFEDD5',
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}>
+                                <Clock size={11} /> {punctuality.label}
+                              </span>
+                            ) : (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                background: '#E9F8F1',
+                                color: '#016139',
+                                border: '1px solid #A3E6C5',
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}>
+                                On Time
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {a.activeBreak ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
+                                <Coffee size={11} /> {a.activeBreak.type} (Live)
+                              </span>
+                            ) : a.totalBreakMinutes > 0 ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
+                                color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
+                                border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
+                                fontWeight: 700,
+                                fontSize: 11
+                              }}>
+                                <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
+                            )}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
+                              {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
+                            </span>
+                          </td>
+                          <td>
+                            {(() => {
+                              const isSuperAdmin = user?.role === 'admin';
+
+                              if (a.overtime) {
+                                return (
+                                  <span
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      padding: '3px 8px',
+                                      background: '#EFF6FF',
+                                      color: '#1D4ED8',
+                                      border: '1px solid #BFDBFE',
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                    }}
+                                    title="Click to edit overtime"
+                                    onClick={() => handleEditOvertime(a)}
+                                  >
+                                    ⚡ {a.overtime}
+                                  </span>
+                                );
+                              }
+
+                              if (!isSuperAdmin) {
+                                return (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: '2px 6px', fontSize: 10, fontWeight: 600, borderStyle: 'dashed' }}
+                                    onClick={() => handleEditOvertime(a)}
+                                    title="Add overtime worked after 7 PM"
+                                  >
+                                    + Add Overtime
+                                  </button>
+                                );
+                              }
+
+                              return <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>-</span>;
+                            })()}
+                          </td>
+                          <td>
+                            <span className={`badge ${punctuality.badgeClass}`}>
+                              {punctuality.status}
+                            </span>
+                          </td>
+                          {isSuperAdminOnly && (
+                            <td>
+                              <button
+                                className="btn btn-warning btn-sm"
+                                style={{ padding: '2px 6px', fontSize: 10, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5' }}
+                                onClick={() => handleResetOrEditAttendance(a)}
+                                title="Reset attendance log or fix check-in time"
+                              >
+                                <RotateCcw size={10} /> Reset / Fix
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {renderPaginationControls(empMonthPage, Math.ceil(employeeMonthLogs.length / ITEMS_PER_PAGE) || 1, employeeMonthLogs.length, setEmpMonthPage)}
+            </>
           )
         ) : viewMode === 'daily' ? (
           /* ================= COMPANY DAY-WISE TABLE ================= */
@@ -892,143 +1203,208 @@ export default function AttendancePage() {
               <p>No check-in logs found for the selected department filter.</p>
             </div>
           ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  {isManagementOrHR && <th>Employee Details</th>}
-                  <th>Department / Role</th>
-                  <th>Shift Timing</th>
-                  <th>Check In Time</th>
-                  <th>Late Duration</th>
-                  <th>Breaks Taken</th>
-                  <th>Check Out Time</th>
-                  <th>Total Working Hours</th>
-                  <th>Punctuality Status</th>
-                  {isManagementOrHR && <th>Action</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredAttendances.map(a => {
-                  const checkInFormatted = a.checkIn
-                    ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : '-';
-                  const checkOutFormatted = a.checkOut
-                    ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : 'In Progress';
-
-                  const empRole = a.employee?.role || user?.role;
-                  const empDept = a.employee?.department || user?.department;
-                  const punctuality = calcPunctuality(a);
-
-                  return (
-                    <tr key={a._id}>
-                      <td style={{ fontWeight: 600 }}>{new Date(a.date).toLocaleDateString()}</td>
-                      {isManagementOrHR && (
-                        <td>
-                          <div
-                            style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}
-                            title="Click to view full month timesheet"
-                            onClick={() => a.employee && handleSelectEmployeeDrilldown(a.employee)}
-                          >
-                            {a.employee?.name || 'N/A'}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-                            {a.employee?.email}
-                          </div>
-                        </td>
-                      )}
-                      <td>
-                        {renderDepartmentBadge(empRole, empDept)}
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
-                      <td style={{ fontWeight: 700, color: punctuality.color }}>
-                        {checkInFormatted}
-                      </td>
-                      <td>
-                        {punctuality.isLate ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            background: '#FFF7ED',
-                            color: '#C2410C',
-                            border: '1px solid #FFEDD5',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}>
-                            <Clock size={11} /> {punctuality.label}
-                          </span>
-                        ) : (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            background: '#E9F8F1',
-                            color: '#016139',
-                            border: '1px solid #A3E6C5',
-                            borderRadius: 6,
-                            fontSize: 11,
-                            fontWeight: 700,
-                          }}>
-                            On Time
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        {a.activeBreak ? (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
-                            <Coffee size={11} /> {a.activeBreak.type} (Live)
-                          </span>
-                        ) : a.totalBreakMinutes > 0 ? (
-                          <span style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '3px 8px',
-                            borderRadius: 6,
-                            background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
-                            color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
-                            border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
-                            fontWeight: 700,
-                            fontSize: 11
-                          }}>
-                            <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
-                        )}
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
-                      <td>
-                        <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
-                          {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`badge ${punctuality.badgeClass}`}>
-                          {punctuality.status}
-                        </span>
-                      </td>
-                      {isManagementOrHR && (
-                        <td>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            onClick={() => a.employee && handleSelectEmployeeDrilldown(a.employee)}
-                          >
-                            <Calendar size={11} /> Month Log
-                          </button>
-                        </td>
-                      )}
+            <>
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      {isManagementOrHR && <th>Employee Details</th>}
+                      <th>Department / Role</th>
+                      <th>Shift Timing</th>
+                      <th>Check In Time</th>
+                      <th>Late Duration</th>
+                      <th>Breaks Taken</th>
+                      <th>Check Out Time</th>
+                      <th>Total Working Hours</th>
+                      <th>Overtime</th>
+                      <th>Punctuality Status</th>
+                      {isManagementOrHR && <th>Action</th>}
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {filteredAttendances
+                      .slice((dailyPage - 1) * ITEMS_PER_PAGE, dailyPage * ITEMS_PER_PAGE)
+                      .map(a => {
+                      const checkInFormatted = a.checkIn
+                        ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '-';
+                      const checkOutFormatted = a.checkOut
+                        ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'In Progress';
+
+                      const empRole = a.employee?.role || user?.role;
+                      const empDept = a.employee?.department || user?.department;
+                      const punctuality = calcPunctuality(a);
+
+                      return (
+                        <tr key={a._id}>
+                          <td style={{ fontWeight: 600 }}>{new Date(a.date).toLocaleDateString()}</td>
+                          {isManagementOrHR && (
+                            <td>
+                              <div
+                                style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}
+                                title="Click to view full month timesheet"
+                                onClick={() => a.employee && handleSelectEmployeeDrilldown(a.employee)}
+                              >
+                                {a.employee?.name || 'N/A'}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                                {a.employee?.email}
+                              </div>
+                            </td>
+                          )}
+                          <td>
+                            {renderDepartmentBadge(empRole, empDept)}
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
+                          <td style={{ fontWeight: 700, color: punctuality.color }}>
+                            {checkInFormatted}
+                          </td>
+                          <td>
+                            {punctuality.isLate ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                background: '#FFF7ED',
+                                color: '#C2410C',
+                                border: '1px solid #FFEDD5',
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}>
+                                <Clock size={11} /> {punctuality.label}
+                              </span>
+                            ) : (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                background: '#E9F8F1',
+                                color: '#016139',
+                                border: '1px solid #A3E6C5',
+                                borderRadius: 6,
+                                fontSize: 11,
+                                fontWeight: 700,
+                              }}>
+                                On Time
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {a.activeBreak ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 8px', borderRadius: 6, background: '#FFFBEB', color: '#B45309', border: '1px solid #FCD34D', fontWeight: 700, fontSize: 11 }}>
+                                <Coffee size={11} /> {a.activeBreak.type} (Live)
+                              </span>
+                            ) : a.totalBreakMinutes > 0 ? (
+                              <span style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4,
+                                padding: '3px 8px',
+                                borderRadius: 6,
+                                background: a.totalBreakMinutes > 60 ? '#FEF2F2' : '#F8FAFC',
+                                color: a.totalBreakMinutes > 60 ? '#DC2626' : 'var(--text-secondary)',
+                                border: `1px solid ${a.totalBreakMinutes > 60 ? '#FCA5A5' : 'var(--border)'}`,
+                                fontWeight: 700,
+                                fontSize: 11
+                              }}>
+                                <Coffee size={11} /> {a.totalBreakMinutes}m {a.totalBreakMinutes > 60 && <AlertTriangle size={11} color="#DC2626" />}
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>0m</span>
+                            )}
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{checkOutFormatted}</td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: a.workingHours >= 8 ? '#016139' : 'var(--text-heading)' }}>
+                              {a.workingHours ? formatWorkingHours(a.workingHours) : (a.currentLiveHours ? `${formatWorkingHours(a.currentLiveHours)} (Live)` : 'In Progress')}
+                            </span>
+                          </td>
+                          <td>
+                            {(() => {
+                              const isSuperAdmin = user?.role === 'admin';
+
+                              if (a.overtime) {
+                                return (
+                                  <span
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 4,
+                                      padding: '3px 8px',
+                                      background: '#EFF6FF',
+                                      color: '#1D4ED8',
+                                      border: '1px solid #BFDBFE',
+                                      borderRadius: 6,
+                                      fontSize: 11,
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                    }}
+                                    title="Click to edit overtime"
+                                    onClick={() => handleEditOvertime(a)}
+                                  >
+                                    ⚡ {a.overtime}
+                                  </span>
+                                );
+                              }
+
+                              if (!isSuperAdmin) {
+                                return (
+                                  <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    style={{ padding: '2px 6px', fontSize: 10, fontWeight: 600, borderStyle: 'dashed' }}
+                                    onClick={() => handleEditOvertime(a)}
+                                    title="Add overtime worked after 7 PM"
+                                  >
+                                    + Add Overtime
+                                  </button>
+                                );
+                              }
+
+                              return <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>-</span>;
+                            })()}
+                          </td>
+                          <td>
+                            <span className={`badge ${punctuality.badgeClass}`}>
+                              {punctuality.status}
+                            </span>
+                          </td>
+                          {isManagementOrHR && (
+                            <td>
+                              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                {isSuperAdminOnly && (
+                                  <button
+                                    className="btn btn-warning btn-sm"
+                                    style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FFF7ED', color: '#C2410C', border: '1px solid #FFEDD5' }}
+                                    onClick={() => handleResetOrEditAttendance(a)}
+                                    title="Reset attendance log or fix check-in time"
+                                  >
+                                    <RotateCcw size={11} /> Reset / Fix
+                                  </button>
+                                )}
+                                <button
+                                  className="btn btn-secondary btn-sm"
+                                  style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                  onClick={() => a.employee && handleSelectEmployeeDrilldown(a.employee)}
+                                >
+                                  <Calendar size={11} /> Month Log
+                                </button>
+                              </div>
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {renderPaginationControls(dailyPage, Math.ceil(filteredAttendances.length / ITEMS_PER_PAGE) || 1, filteredAttendances.length, setDailyPage)}
+            </>
           )
         ) : (
           /* ================= COMPANY MONTH-WISE SUMMARY TABLE ================= */
@@ -1040,123 +1416,132 @@ export default function AttendancePage() {
                 <p>No employee activity recorded during this billing month.</p>
               </div>
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Employee Name</th>
-                    <th>Department / Role</th>
-                    <th>Month</th>
-                    <th>Total Days Present</th>
-                    <th>On-Time Days</th>
-                    <th>Late Days</th>
-                    <th>Total Hours Logged</th>
-                    <th>Avg Daily Hours</th>
-                    <th>Punctuality Rate</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMonthlyReport.map((m) => {
-                    const punctualityPercent = m.totalDays > 0 ? Math.round((m.presentDays / m.totalDays) * 100) : 100;
-
-                    return (
-                      <tr key={m.employeeId}>
-                        <td>
-                          <div
-                            style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}
-                            title="Click to view full month timesheet"
-                            onClick={() => handleSelectEmployeeDrilldown({ _id: m.employeeId, name: m.name, email: m.email, department: m.department, role: m.role })}
-                          >
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{m.email}</div>
-                        </td>
-                        <td>
-                          {renderDepartmentBadge(m.role, m.department)}
-                        </td>
-                        <td style={{ fontWeight: 600 }}>{MONTH_NAMES[selectedMonth - 1]} {selectedYear}</td>
-                        <td style={{ fontWeight: 700, fontSize: 14, color: 'var(--primary)' }}>
-                          {m.totalDays} Days
-                        </td>
-                        <td style={{ color: '#10B981', fontWeight: 700 }}>{m.presentDays} Days</td>
-                        <td style={{ color: m.lateDays > 0 ? '#EF4444' : 'var(--text-muted)', fontWeight: 700 }}>
-                          {m.lateDays} Days
-                        </td>
-                        <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{m.totalWorkingHours} hrs</td>
-                        <td style={{ fontWeight: 600 }}>{m.avgWorkingHours} hrs/day</td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <div className="progress-bar-wrap" style={{ width: 60, height: 6 }}>
-                              <div
-                                className="progress-bar-fill"
-                                style={{
-                                  width: `${punctualityPercent}%`,
-                                  background: punctualityPercent >= 80 ? '#10B981' : '#F59E0B'
-                                }}
-                              />
-                            </div>
-                            <span style={{ fontSize: 11, fontWeight: 700 }}>{punctualityPercent}%</span>
-                          </div>
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            onClick={() => handleSelectEmployeeDrilldown({ _id: m.employeeId, name: m.name, email: m.email, department: m.department, role: m.role })}
-                          >
-                            <Eye size={11} /> View Details
-                          </button>
-                        </td>
+              <>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Employee Name</th>
+                        <th>Department / Role</th>
+                        <th>Month</th>
+                        <th>Total Days Present</th>
+                        <th>On-Time Days</th>
+                        <th>Late Days</th>
+                        <th>Total Hours Logged</th>
+                        <th>Avg Daily Hours</th>
+                        <th>Punctuality Rate</th>
+                        <th>Action</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                    </thead>
+                    <tbody>
+                      {filteredMonthlyReport
+                        .slice((monthlyReportPage - 1) * ITEMS_PER_PAGE, monthlyReportPage * ITEMS_PER_PAGE)
+                        .map((m) => {
+                        const punctualityPercent = m.totalDays > 0 ? Math.round((m.presentDays / m.totalDays) * 100) : 100;
+
+                        return (
+                          <tr key={m.employeeId}>
+                            <td>
+                              <div
+                                style={{ fontWeight: 700, color: 'var(--primary)', cursor: 'pointer' }}
+                                title="Click to view full month timesheet"
+                                onClick={() => handleSelectEmployeeDrilldown({ _id: m.employeeId, name: m.name, email: m.email, department: m.department, role: m.role })}
+                              >
+                                {m.name}
+                              </div>
+                              <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{m.email}</div>
+                            </td>
+                            <td>
+                              {renderDepartmentBadge(m.role, m.department)}
+                            </td>
+                            <td style={{ fontWeight: 600 }}>{MONTH_NAMES[selectedMonth - 1]} {selectedYear}</td>
+                            <td style={{ fontWeight: 700, fontSize: 14, color: 'var(--primary)' }}>
+                              {m.totalDays} Days
+                            </td>
+                            <td style={{ color: '#10B981', fontWeight: 700 }}>{m.presentDays} Days</td>
+                            <td style={{ color: m.lateDays > 0 ? '#EF4444' : 'var(--text-muted)', fontWeight: 700 }}>
+                              {m.lateDays} Days
+                            </td>
+                            <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{m.totalWorkingHours} hrs</td>
+                            <td style={{ fontWeight: 600 }}>{m.avgWorkingHours} hrs/day</td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <div className="progress-bar-wrap" style={{ width: 60, height: 6 }}>
+                                  <div
+                                    className="progress-bar-fill"
+                                    style={{
+                                      width: `${punctualityPercent}%`,
+                                      background: punctualityPercent >= 80 ? '#10B981' : '#F59E0B'
+                                    }}
+                                  />
+                                </div>
+                                <span style={{ fontSize: 11, fontWeight: 700 }}>{punctualityPercent}%</span>
+                              </div>
+                            </td>
+                            <td>
+                              <button
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '3px 8px', fontSize: 11, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                onClick={() => handleSelectEmployeeDrilldown({ _id: m.employeeId, name: m.name, email: m.email, department: m.department, role: m.role })}
+                              >
+                                <Eye size={11} /> View Details
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {renderPaginationControls(monthlyReportPage, Math.ceil(filteredMonthlyReport.length / ITEMS_PER_PAGE) || 1, filteredMonthlyReport.length, setMonthlyReportPage)}
+              </>
             )
           ) : (
             /* Regular staff monthly history */
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Department</th>
-                  <th>Shift Timing</th>
-                  <th>Check In</th>
-                  <th>Late Duration</th>
-                  <th>Check Out</th>
-                  <th>Working Hours</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendances.map(a => (
-                  <tr key={a._id}>
-                    <td style={{ fontWeight: 600 }}>{new Date(a.date).toLocaleDateString()}</td>
-                    <td>{renderDepartmentBadge(user?.role, user?.department)}</td>
-                    <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
-                    <td style={{ fontWeight: 700, color: a.status === 'late' ? '#D97706' : '#016139' }}>
-                      {a.checkIn ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                    </td>
-                    <td>
-                      {a.status === 'late' ? (
-                        <span style={{ color: '#C2410C', fontWeight: 700, fontSize: 11 }}>
-                          {a.lateDuration || 'Late'}
-                        </span>
-                      ) : (
-                        <span style={{ color: '#016139', fontWeight: 700, fontSize: 11 }}>On Time</span>
-                      )}
-                    </td>
-                    <td>{a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress'}</td>
-                    <td style={{ fontWeight: 700 }}>{a.workingHours ? `${a.workingHours} hrs` : 'In Progress'}</td>
-                    <td>
-                      <span className={`badge badge-${a.status === 'present' ? 'won' : a.status === 'late' ? 'quotation' : 'lost'}`}>
-                        {a.status.toUpperCase()}
-                      </span>
-                    </td>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Department</th>
+                    <th>Shift Timing</th>
+                    <th>Check In</th>
+                    <th>Late Duration</th>
+                    <th>Check Out</th>
+                    <th>Working Hours</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {attendances.map(a => (
+                    <tr key={a._id}>
+                      <td style={{ fontWeight: 600 }}>{new Date(a.date).toLocaleDateString()}</td>
+                      <td>{renderDepartmentBadge(user?.role, user?.department)}</td>
+                      <td style={{ fontSize: 12, color: 'var(--text-muted)' }}>10:00 AM - 7:00 PM</td>
+                      <td style={{ fontWeight: 700, color: a.status === 'late' ? '#D97706' : '#016139' }}>
+                        {a.checkIn ? new Date(a.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                      </td>
+                      <td>
+                        {a.status === 'late' ? (
+                          <span style={{ color: '#C2410C', fontWeight: 700, fontSize: 11 }}>
+                            {a.lateDuration || 'Late'}
+                          </span>
+                        ) : (
+                          <span style={{ color: '#016139', fontWeight: 700, fontSize: 11 }}>On Time</span>
+                        )}
+                      </td>
+                      <td>{a.checkOut ? new Date(a.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'In Progress'}</td>
+                      <td style={{ fontWeight: 700 }}>{a.workingHours ? `${a.workingHours} hrs` : 'In Progress'}</td>
+                      <td>
+                        <span className={`badge badge-${a.status === 'present' ? 'won' : a.status === 'late' ? 'quotation' : 'lost'}`}>
+                          {a.status === 'late' ? 'PRESENT (LATE)' : (a.status?.toUpperCase() || 'PRESENT')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )
         )}
       </div>

@@ -685,40 +685,42 @@ export default function DashboardPage() {
             </div>
             {data?.followupsToday?.length ? (
               <div className="table-wrapper">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Lead Name</th>
-                      <th>Company</th>
-                      <th>Phone</th>
-                      <th>Requirement</th>
-                      <th>Status</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.followupsToday.map((f) => (
-                      <tr key={f._id}>
-                        <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{f.name}</td>
-                        <td>{f.company || '-'}</td>
-                        <td>
-                          <a href={`tel:${f.phone}`} style={{ color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                            <PhoneCall size={13} /> {f.phone}
-                          </a>
-                        </td>
-                        <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{f.requirement || 'General Inquiry'}</td>
-                        <td>
-                          <span className={`badge badge-${f.status}`}>{f.status.toUpperCase()}</span>
-                        </td>
-                        <td>
-                          <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/leads`)} style={{ padding: '3px 8px', fontSize: 11 }}>
-                            Open Lead ↗
-                          </button>
-                        </td>
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Lead Name</th>
+                        <th>Company</th>
+                        <th>Phone</th>
+                        <th>Requirement</th>
+                        <th>Status</th>
+                        <th>Action</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.followupsToday.map((f) => (
+                        <tr key={f._id}>
+                          <td style={{ fontWeight: 700, color: 'var(--text-heading)' }}>{f.name}</td>
+                          <td>{f.company || '-'}</td>
+                          <td>
+                            <a href={`tel:${f.phone}`} style={{ color: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                              <PhoneCall size={13} /> {f.phone}
+                            </a>
+                          </td>
+                          <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{f.requirement || 'General Inquiry'}</td>
+                          <td>
+                            <span className={`badge badge-${f.status}`}>{f.status.toUpperCase()}</span>
+                          </td>
+                          <td>
+                            <button className="btn btn-secondary btn-sm" onClick={() => navigate(`/leads`)} style={{ padding: '3px 8px', fontSize: 11 }}>
+                              Open Lead ↗
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: 25 }}>
@@ -789,7 +791,8 @@ export default function DashboardPage() {
             </div>
             {data?.myProjects?.length ? (
               <div className="table-wrapper">
-                <table className="table">
+                <div className="table-responsive">
+                  <table className="table">
                   <thead>
                     <tr>
                       <th>Project ID & Name</th>
@@ -838,6 +841,7 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: 25 }}>
                 No active projects assigned to you at the moment.
@@ -907,7 +911,8 @@ export default function DashboardPage() {
             </div>
             {data?.pendingLeaves?.length ? (
               <div className="table-wrapper">
-                <table className="table">
+                <div className="table-responsive">
+                  <table className="table">
                   <thead>
                     <tr>
                       <th>Employee Name</th>
@@ -944,6 +949,7 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
             ) : (
               <p style={{ fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', padding: 25 }}>
                 No pending leave applications to review today!
@@ -1117,7 +1123,8 @@ export default function DashboardPage() {
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate('/leads')}>View Leads Register</button>
               </div>
               <div className="table-wrapper">
-                <table className="table">
+                <div className="table-responsive">
+                  <table className="table">
                   <thead>
                     <tr>
                       <th>Sales Executive</th>
@@ -1197,6 +1204,7 @@ export default function DashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
             </div>
           )}
 

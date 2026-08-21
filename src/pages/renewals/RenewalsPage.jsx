@@ -6,6 +6,7 @@ import {
   X, AlertCircle, DollarSign
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 const RENEWAL_TABS = ['all', 'due_today', 'next_7_days', 'next_30_days', 'renewed', 'expired'];
 
@@ -14,9 +15,14 @@ export default function RenewalsPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('all');
+  const [renewalPage, setRenewalPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [previewRenewal, setPreviewRenewal] = useState(null);
   const [clients, setClients] = useState([]);
+
+  useEffect(() => {
+    setRenewalPage(1);
+  }, [statusTab]);
 
   const [formData, setFormData] = useState({
     client: '',
@@ -251,94 +257,107 @@ export default function RenewalsPage() {
             <p>Maintain recurring client subscriptions like Hosting, SEO, Domains.</p>
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Client Name</th>
-                <th>Service Name</th>
-                <th>Start Date</th>
-                <th>Expiry Date</th>
-                <th>Amount (₹)</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renewals.map(r => (
-                <tr key={r._id}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
-                    <div>{r.client?.name || 'N/A'}</div>
-                    {r.client?.company && (
-                      <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.client.company}</div>
-                    )}
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{r.service}</div>
-                    {r.notes && (
-                      <div style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {r.notes}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ fontSize: 13 }}>{new Date(r.startDate).toLocaleDateString()}</td>
-                  <td style={{ fontWeight: 600, color: r.status === 'expired' || r.status === 'due_today' ? 'var(--red)' : 'var(--text-heading)' }}>
-                    {new Date(r.expiryDate).toLocaleDateString()}
-                  </td>
-                  <td style={{ fontWeight: 700 }}>₹{r.amount?.toLocaleString() || 0}</td>
-                  <td>{getStatusBadge(r.status)}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {/* Preview Button */}
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: 4
-                        }}
-                        onClick={() => setPreviewRenewal(r)}
-                        title="View Full Renewal Details"
-                      >
-                        <Eye size={13} /> Preview
-                      </button>
+          <>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Client Name</th>
+                    <th>Service Name</th>
+                    <th>Start Date</th>
+                    <th>Expiry Date</th>
+                    <th>Amount (₹)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renewals
+                    .slice((renewalPage - 1) * 7, renewalPage * 7)
+                    .map(r => (
+                    <tr key={r._id}>
+                      <td style={{ fontWeight: 600, color: 'var(--text-heading)' }}>
+                        <div>{r.client?.name || 'N/A'}</div>
+                        {r.client?.company && (
+                          <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.client.company}</div>
+                        )}
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{r.service}</div>
+                        {r.notes && (
+                          <div style={{ fontSize: 11, color: 'var(--text-muted)', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {r.notes}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ fontSize: 13 }}>{new Date(r.startDate).toLocaleDateString()}</td>
+                      <td style={{ fontWeight: 600, color: r.status === 'expired' || r.status === 'due_today' ? 'var(--red)' : 'var(--text-heading)' }}>
+                        {new Date(r.expiryDate).toLocaleDateString()}
+                      </td>
+                      <td style={{ fontWeight: 700 }}>₹{r.amount?.toLocaleString() || 0}</td>
+                      <td>{getStatusBadge(r.status)}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {/* Preview Button */}
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            style={{
+                              padding: '4px 8px',
+                              fontSize: 12,
+                              fontWeight: 600,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4
+                            }}
+                            onClick={() => setPreviewRenewal(r)}
+                            title="View Full Renewal Details"
+                          >
+                            <Eye size={13} /> Preview
+                          </button>
 
-                      {/* Renew Now Button */}
-                      {r.status !== 'renewed' && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          style={{
-                            background: '#10B981',
-                            padding: '4px 8px',
-                            fontSize: 12,
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 4
-                          }}
-                          onClick={() => handleRenewService(r._id, r.service)}
-                          title="Process Service Renewal"
-                        >
-                          <RefreshCw size={13} /> Renew
-                        </button>
-                      )}
+                          {/* Renew Now Button */}
+                          {r.status !== 'renewed' && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              style={{
+                                background: '#10B981',
+                                padding: '4px 8px',
+                                fontSize: 12,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 4
+                              }}
+                              onClick={() => handleRenewService(r._id, r.service)}
+                              title="Process Service Renewal"
+                            >
+                              <RefreshCw size={13} /> Renew
+                            </button>
+                          )}
 
-                      {/* Delete Button */}
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ color: 'var(--red)', padding: '4px 6px' }}
-                        onClick={() => handleDeleteRenewal(r._id, r.service)}
-                        title="Delete Renewal Record"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                          {/* Delete Button */}
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: 'var(--red)', padding: '4px 6px' }}
+                            onClick={() => handleDeleteRenewal(r._id, r.service)}
+                            title="Delete Renewal Record"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <PaginationControls
+              currentPage={renewalPage}
+              totalPages={Math.ceil(renewals.length / 7) || 1}
+              totalItems={renewals.length}
+              itemsPerPage={7}
+              onPageChange={setRenewalPage}
+            />
+          </>
         )}
       </div>
 

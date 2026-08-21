@@ -8,6 +8,33 @@ import Swal from 'sweetalert2';
 const LEAD_STATUSES = ['new', 'assigned', 'contacted', 'interested', 'requirement', 'quotation', 'negotiation', 'won', 'lost'];
 const LEAD_SOURCES = ['facebook', 'google', 'website', 'referral', 'calling', 'whatsapp', 'other'];
 
+const normalizeMeetingMode = (mode) => {
+  if (!mode) return 'online';
+  const m = String(mode).toLowerCase().trim();
+  if (m.includes('call') || m.includes('phone')) return 'call';
+  if (m.includes('offline')) return 'offline';
+  return 'online';
+};
+
+const extractMeetingMode = (lead) => {
+  const req = lead?.requirement || '';
+  if (req.includes('[MODE:offline]')) return 'offline';
+  if (req.includes('[MODE:call]')) return 'call';
+  if (req.includes('[MODE:online]')) return 'online';
+  return normalizeMeetingMode(lead?.meetingMode || lead?.meeting_mode || lead?.meetingType);
+};
+
+const cleanRequirementText = (req) => {
+  if (!req) return '';
+  return req.replace(/\[MODE:(online|offline|call)\]/gi, '').trim();
+};
+
+const formatRequirementWithMode = (reqText, mode) => {
+  const clean = cleanRequirementText(reqText);
+  const tag = `[MODE:${mode || 'online'}]`;
+  return clean ? `${clean}\n${tag}` : tag;
+};
+
 export default function LeadDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -16,21 +43,25 @@ export default function LeadDetailPage() {
 
   const [lead, setLead] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [clients, setClients] = useState([]);
   const [salesUsers, setSalesUsers] = useState([]);
+
+  // Edit Modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
 
   // Follow-up Modal
   const [showFollowupModal, setShowFollowupModal] = useState(false);
   const [followupData, setFollowupData] = useState({
-    date: new Date().toISOString().split('T')[0], type: 'call', notes: '', outcome: '', nextAction: ''
+    date: new Date().toISOString().split('T')[0],
+    type: 'call',
+    notes: '',
+    outcome: '',
+    nextAction: ''
   });
 
-  // Edit Lead Modal
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFormData, setEditFormData] = useState({
-    name: '', company: '', phone: '', whatsapp: '', email: '', city: '', requirement: '', source: 'website', estimatedValue: '', assignedTo: ''
-  });
-
-  // Note State
+  // Notes
   const [noteText, setNoteText] = useState('');
 
   useEffect(() => {
@@ -44,7 +75,7 @@ export default function LeadDetailPage() {
       const { data } = await leadsAPI.getOne(id);
       setLead(data.data);
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to load lead details' });
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -59,6 +90,8 @@ export default function LeadDetailPage() {
 
   const handleOpenEdit = () => {
     if (!lead) return;
+    const mode = extractMeetingMode(lead);
+    const cleanReq = cleanRequirementText(lead.requirement);
     setEditFormData({
       name: lead.name || '',
       company: lead.company || '',
@@ -66,8 +99,9 @@ export default function LeadDetailPage() {
       whatsapp: lead.whatsapp || '',
       email: lead.email || '',
       city: lead.city || '',
-      requirement: lead.requirement || '',
+      requirement: cleanReq,
       source: lead.source || 'website',
+      meetingMode: mode,
       estimatedValue: lead.estimatedValue || '',
       assignedTo: lead.assignedTo?._id || lead.assignedTo || ''
     });
@@ -84,11 +118,18 @@ export default function LeadDetailPage() {
         }
       });
       if (editFormData.estimatedValue) payload.estimatedValue = Number(editFormData.estimatedValue);
+      const chosenMode = editFormData.meetingMode || 'online';
+      payload.meetingMode = chosenMode;
+      payload.requirement = formatRequirementWithMode(editFormData.requirement, chosenMode);
 
-      await leadsAPI.update(id, payload);
+      const res = await leadsAPI.update(id, payload);
+      const updated = res.data?.data || res.data;
+      if (updated) {
+        setLead(prev => ({ ...prev, ...payload, ...updated }));
+      }
       Swal.fire({ icon: 'success', title: 'Lead Updated!', text: 'Contact details updated successfully', timer: 1500, showConfirmButton: false });
       setShowEditModal(false);
-      fetchLead();
+      await fetchLead();
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Update Failed', text: err.response?.data?.message || 'Could not update lead' });
     }
@@ -137,31 +178,31 @@ export default function LeadDetailPage() {
     try {
       await leadsAPI.addNote(id, noteText);
       setNoteText('');
+      Swal.fire({ icon: 'success', title: 'Note Added', timer: 1200, showConfirmButton: false });
       fetchLead();
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Failed', text: 'Note could not be saved' });
+      Swal.fire({ icon: 'error', title: 'Failed', text: 'Could not add note' });
     }
   };
 
-  const handleConvertToClient = async () => {
+  const handleMarkWonAndConvert = async () => {
     const res = await Swal.fire({
-      title: 'Mark Won & Convert to Client?',
-      text: `Mark deal as WON and create active Client profile for "${lead.company || lead.name}".`,
+      title: 'Convert Lead to Active Client?',
+      text: `Are you sure you want to mark "${lead.name}" as WON? This will automatically create an active client record.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#10B981',
-      confirmButtonText: 'Yes, Mark Won',
+      confirmButtonText: 'Yes, Convert to Client',
     });
-
     if (res.isConfirmed) {
       try {
         await leadsAPI.updateStatus(id, 'won');
         Swal.fire({
           icon: 'success',
-          title: 'Deal Won! Client Created!',
-          text: `Client profile for "${lead.company || lead.name}" is now active in Client Directory.`,
-          timer: 2500,
-          showConfirmButton: true
+          title: 'Deal Won & Client Created!',
+          text: 'Lead successfully converted to an Active Client.',
+          timer: 2000,
+          showConfirmButton: false
         });
         fetchLead();
       } catch (err) {
@@ -173,22 +214,34 @@ export default function LeadDetailPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-        <div className="loading-spinner" style={{ width: 36, height: 36 }} />
+        <div className="spinner"></div>
       </div>
     );
   }
 
-  if (!lead) return <div>Lead not found</div>;
+  if (!lead) {
+    return (
+      <div className="card" style={{ padding: 40, textAlign: 'center' }}>
+        <h3>Lead Not Found</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 20 }}>The lead you are looking for does not exist or has been removed.</p>
+        <button className="btn btn-secondary" onClick={() => navigate('/leads')}>Back to Leads</button>
+      </div>
+    );
+  }
+
+  const currentMeetingMode = extractMeetingMode(lead);
 
   return (
     <div>
-      {/* Back button */}
-      <button className="btn btn-ghost btn-sm" onClick={() => navigate('/leads')} style={{ marginBottom: 16 }}>
-        <ArrowLeft size={16} /> Back to Leads
-      </button>
+      {/* Top Navigation */}
+      <div style={{ marginBottom: 16 }}>
+        <button className="btn btn-ghost" onClick={() => navigate('/leads')} style={{ paddingLeft: 0, gap: 4 }}>
+          <ArrowLeft size={16} /> Back to Sales Leads
+        </button>
+      </div>
 
-      {/* Header card */}
-      <div className="card" style={{ marginBottom: 24 }}>
+      {/* Header Info Banner */}
+      <div className="card" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             <div className="avatar avatar-lg" style={{ fontSize: 20 }}>
@@ -201,6 +254,19 @@ export default function LeadDetailPage() {
                 <span className="badge" style={{ background: 'var(--bg-secondary)', color: 'var(--primary)', fontWeight: 700 }}>
                   {lead.leadId}
                 </span>
+                {currentMeetingMode === 'offline' ? (
+                  <span className="badge" style={{ background: '#faf5ff', color: '#7e22ce', border: '1px solid #f3e8ff', fontWeight: 600, fontSize: 11 }}>
+                    Offline Meeting
+                  </span>
+                ) : currentMeetingMode === 'call' ? (
+                  <span className="badge" style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: 600, fontSize: 11 }}>
+                    Phone Call
+                  </span>
+                ) : (
+                  <span className="badge" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #e0f2fe', fontWeight: 600, fontSize: 11 }}>
+                    Online Meeting
+                  </span>
+                )}
               </div>
               <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
                 {lead.company || 'Individual Lead'} • Source: <strong>{lead.source}</strong> {lead.city ? `• City: ${lead.city}` : ''}
@@ -214,7 +280,7 @@ export default function LeadDetailPage() {
               <Edit3 size={15} style={{ color: 'var(--primary)' }} /> Edit Lead
             </button>
             {lead.status !== 'won' && (
-              <button className="btn btn-primary" style={{ background: '#10B981' }} onClick={handleConvertToClient}>
+              <button className="btn btn-primary" style={{ background: '#10B981' }} onClick={handleMarkWonAndConvert}>
                 <Award size={16} /> Mark Won & Convert
               </button>
             )}
@@ -322,7 +388,7 @@ export default function LeadDetailPage() {
                 lineHeight: 1.5,
                 color: 'var(--text-heading)'
               }}>
-                {lead.requirement || 'No detailed requirements provided yet.'}
+                {cleanRequirementText(lead.requirement) || 'No detailed requirements provided yet.'}
               </div>
             </div>
           </div>
@@ -473,6 +539,77 @@ export default function LeadDetailPage() {
                     value={editFormData.requirement}
                     onChange={e => setEditFormData({ ...editFormData, requirement: e.target.value })}
                   />
+                </div>
+
+                {/* Meeting Type / Mode Selection */}
+                <div className="form-group" style={{ marginBottom: 20 }}>
+                  <label className="form-label required" style={{ fontWeight: 700 }}>Meeting Type / Mode</label>
+                  {(() => {
+                    const currentMode = normalizeMeetingMode(editFormData.meetingMode);
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, meetingMode: 'online' })}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            border: currentMode === 'online' ? '1.5px solid #0284c7' : '1px solid #cbd5e1',
+                            background: currentMode === 'online' ? '#f0f9ff' : '#ffffff',
+                            color: currentMode === 'online' ? '#0369a1' : '#475569',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          Online Meeting
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, meetingMode: 'offline' })}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            border: currentMode === 'offline' ? '1.5px solid #7e22ce' : '1px solid #cbd5e1',
+                            background: currentMode === 'offline' ? '#faf5ff' : '#ffffff',
+                            color: currentMode === 'offline' ? '#7e22ce' : '#475569',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          Offline Meeting
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, meetingMode: 'call' })}
+                          style={{
+                            padding: '8px 12px',
+                            borderRadius: 6,
+                            border: currentMode === 'call' ? '1.5px solid #059669' : '1px solid #cbd5e1',
+                            background: currentMode === 'call' ? '#ecfdf5' : '#ffffff',
+                            color: currentMode === 'call' ? '#047857' : '#475569',
+                            fontWeight: 600,
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          Phone Call
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="grid-3">

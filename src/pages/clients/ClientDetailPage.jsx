@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { clientsAPI, projectsAPI, paymentsAPI, renewalsAPI } from '../../api';
 import { ArrowLeft, Building, Phone, Mail, FolderKanban, CreditCard, RefreshCw, Plus, FileText, Edit3, ShieldCheck, MapPin, FileCheck, Info } from 'lucide-react';
 import Swal from 'sweetalert2';
+import PaginationControls from '../../components/common/PaginationControls';
 
 export default function ClientDetailPage() {
   const { id } = useParams();
@@ -13,6 +14,10 @@ export default function ClientDetailPage() {
   const [renewals, setRenewals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const [projPage, setProjPage] = useState(1);
+  const [payPage, setPayPage] = useState(1);
+  const [renPage, setRenPage] = useState(1);
 
   const [formData, setFormData] = useState({
     name: '', company: '', phone: '', whatsapp: '', email: '', city: '', address: '', gstin: '', notes: '', status: 'active'
@@ -230,36 +235,49 @@ export default function ClientDetailPage() {
             <h3 className="card-title">Client Projects ({projects.length})</h3>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/projects')}>View All</button>
           </div>
-          {projects.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No projects assigned yet</p> : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Project</th>
-                  <th>Department</th>
-                  <th>Assigned To</th>
-                  <th>Progress</th>
-                  <th>Deadline</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map(p => (
-                  <tr key={p._id} onClick={() => navigate(`/projects/${p._id}`)}>
-                    <td style={{ fontWeight: 600 }}>{p.name}</td>
-                    <td>{p.department?.replace('_', ' ').toUpperCase()}</td>
-                    <td>{p.assignedTo?.name || 'Unassigned'}</td>
-                    <td>
-                      <div className="progress-bar-wrap" style={{ width: 100 }}>
-                        <div className="progress-bar-fill" style={{ width: `${p.progress}%` }} />
-                      </div>
-                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.progress}%</span>
-                    </td>
-                    <td>{new Date(p.deadline).toLocaleDateString()}</td>
-                    <td><span className={`badge badge-${p.status}`}>{p.status.toUpperCase()}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {projects.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 20px' }}>No projects assigned yet</p> : (
+            <div className="table-wrapper">
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Project</th>
+                      <th>Department</th>
+                      <th>Assigned To</th>
+                      <th>Progress</th>
+                      <th>Deadline</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects
+                      .slice((projPage - 1) * 7, projPage * 7)
+                      .map(p => (
+                      <tr key={p._id} onClick={() => navigate(`/projects/${p._id}`)}>
+                        <td style={{ fontWeight: 600 }}>{p.name}</td>
+                        <td>{p.department?.replace('_', ' ').toUpperCase()}</td>
+                        <td>{p.assignedTo?.name || 'Unassigned'}</td>
+                        <td>
+                          <div className="progress-bar-wrap" style={{ width: 100 }}>
+                            <div className="progress-bar-fill" style={{ width: `${p.progress}%` }} />
+                          </div>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{p.progress}%</span>
+                        </td>
+                        <td>{new Date(p.deadline).toLocaleDateString()}</td>
+                        <td><span className={`badge badge-${p.status}`}>{p.status.toUpperCase()}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={projPage}
+                totalPages={Math.ceil(projects.length / 7) || 1}
+                totalItems={projects.length}
+                itemsPerPage={7}
+                onPageChange={setProjPage}
+              />
+            </div>
           )}
         </div>
 
@@ -268,29 +286,42 @@ export default function ClientDetailPage() {
           <div className="card-header">
             <h3 className="card-title">Payments & Invoices ({payments.length})</h3>
           </div>
-          {payments.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No payment history</p> : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Payment No</th>
-                  <th>Invoice Amt</th>
-                  <th>Received</th>
-                  <th>Pending</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payments.map(py => (
-                  <tr key={py._id}>
-                    <td style={{ fontWeight: 600 }}>{py.paymentNo}</td>
-                    <td>₹{py.invoiceAmount?.toLocaleString()}</td>
-                    <td style={{ color: '#10B981', fontWeight: 600 }}>₹{py.receivedAmount?.toLocaleString()}</td>
-                    <td style={{ color: '#EF4444', fontWeight: 600 }}>₹{py.pendingAmount?.toLocaleString()}</td>
-                    <td><span className={`badge badge-${py.status}`}>{py.status.toUpperCase()}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {payments.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 20px' }}>No payment history</p> : (
+            <div className="table-wrapper">
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Payment No</th>
+                      <th>Invoice Amt</th>
+                      <th>Received</th>
+                      <th>Pending</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payments
+                      .slice((payPage - 1) * 7, payPage * 7)
+                      .map(py => (
+                      <tr key={py._id}>
+                        <td style={{ fontWeight: 600 }}>{py.paymentNo}</td>
+                        <td>₹{py.invoiceAmount?.toLocaleString()}</td>
+                        <td style={{ color: '#10B981', fontWeight: 600 }}>₹{py.receivedAmount?.toLocaleString()}</td>
+                        <td style={{ color: '#EF4444', fontWeight: 600 }}>₹{py.pendingAmount?.toLocaleString()}</td>
+                        <td><span className={`badge badge-${py.status}`}>{py.status.toUpperCase()}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={payPage}
+                totalPages={Math.ceil(payments.length / 7) || 1}
+                totalItems={payments.length}
+                itemsPerPage={7}
+                onPageChange={setPayPage}
+              />
+            </div>
           )}
         </div>
 
@@ -299,27 +330,40 @@ export default function ClientDetailPage() {
           <div className="card-header">
             <h3 className="card-title">Services & Renewals ({renewals.length})</h3>
           </div>
-          {renewals.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>No renewal services setup</p> : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Service</th>
-                  <th>Start Date</th>
-                  <th>Expiry Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {renewals.map(r => (
-                  <tr key={r._id}>
-                    <td style={{ fontWeight: 600 }}>{r.service}</td>
-                    <td>{new Date(r.startDate).toLocaleDateString()}</td>
-                    <td style={{ fontWeight: 600, color: 'var(--red)' }}>{new Date(r.expiryDate).toLocaleDateString()}</td>
-                    <td><span className={`badge badge-${r.status}`}>{r.status.toUpperCase()}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {renewals.length === 0 ? <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: '16px 20px' }}>No renewal services setup</p> : (
+            <div className="table-wrapper">
+              <div className="table-responsive">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                      <th>Start Date</th>
+                      <th>Expiry Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renewals
+                      .slice((renPage - 1) * 7, renPage * 7)
+                      .map(r => (
+                      <tr key={r._id}>
+                        <td style={{ fontWeight: 600 }}>{r.service}</td>
+                        <td>{new Date(r.startDate).toLocaleDateString()}</td>
+                        <td style={{ fontWeight: 600, color: 'var(--red)' }}>{new Date(r.expiryDate).toLocaleDateString()}</td>
+                        <td><span className={`badge badge-${r.status}`}>{r.status.toUpperCase()}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <PaginationControls
+                currentPage={renPage}
+                totalPages={Math.ceil(renewals.length / 7) || 1}
+                totalItems={renewals.length}
+                itemsPerPage={7}
+                onPageChange={setRenPage}
+              />
+            </div>
           )}
         </div>
       </div>
